@@ -1,4 +1,5 @@
 import asyncHandler from "../utils/asyncHandler.js";
+import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import {
   getTestPerformance,
@@ -17,7 +18,13 @@ export const questionAnalytics = asyncHandler(async (req, res) => {
 });
 
 export const studentAnalytics = asyncHandler(async (req, res) => {
-  const studentId = req.params.studentId || req.user._id;
+  const studentId = req.params.studentId || req.user._id.toString();
+
+  // Students may only read their own results.
+  if (req.user.role === "student" && studentId !== req.user._id.toString()) {
+    throw new ApiError(403, "You can only view your own results");
+  }
+
   const data = await getStudentPerformance(studentId);
   res.status(200).json(new ApiResponse(200, data, "Student analytics fetched"));
 });

@@ -4,10 +4,11 @@ export const registerSchema = z.object({
   name: z.string().min(2).max(100),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(["admin", "teacher", "student"]).optional(),
+  // Self-service signup is limited to students and teachers; admins are seeded or promoted.
+  role: z.enum(["teacher", "student"]).optional(),
 });
 
 export const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(1, "Password is required"),
 });

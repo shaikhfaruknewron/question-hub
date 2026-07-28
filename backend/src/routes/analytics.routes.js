@@ -8,6 +8,9 @@ router.use(verifyJWT);
 
 router.get("/test/:testId", authorizeRoles("admin", "teacher"), testAnalytics);
 router.get("/questions", authorizeRoles("admin", "teacher"), questionAnalytics);
-router.get("/student/:studentId?", studentAnalytics);
+// Express 5 (path-to-regexp v8) dropped the `:param?` syntax, so the two shapes
+// are registered separately.
+router.get("/student", studentAnalytics);
+router.get("/student/:studentId", studentAnalytics);
 
 export default router;

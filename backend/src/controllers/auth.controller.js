@@ -6,11 +6,19 @@ import { generateAccessToken, generateRefreshToken } from "../utils/generateToke
 import jwt from "jsonwebtoken";
 import { ENV } from "../config/env.js";
 
+const isProduction = ENV.NODE_ENV === "production";
+
+// In production the API and the frontend usually live on different domains, which
+// requires SameSite=None; that in turn requires Secure.
 const cookieOptions = {
   httpOnly: true,
-  secure: ENV.NODE_ENV === "production",
-  sameSite: "strict",
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+  path: "/",
 };
+
+const ACCESS_COOKIE = { ...cookieOptions, maxAge: 15 * 60 * 1000 };
+const REFRESH_COOKIE = { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 };
 
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -43,8 +51,8 @@ export const login = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
+    .cookie("accessToken", accessToken, ACCESS_COOKIE)
+    .cookie("refreshToken", refreshToken, REFRESH_COOKIE)
     .json(
       new ApiResponse(
         200,
@@ -79,8 +87,8 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", newRefreshToken, cookieOptions)
+    .cookie("accessToken", accessToken, ACCESS_COOKIE)
+    .cookie("refreshToken", newRefreshToken, REFRESH_COOKIE)
     .json(new ApiResponse(200, { accessToken, refreshToken: newRefreshToken }, "Token refreshed"));
 });
 
