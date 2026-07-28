@@ -15,11 +15,9 @@ app.use(
   cors({
     // Allow the configured frontends plus tools with no Origin header (curl, Postman).
     origin: (origin, callback) => {
-      if (!origin || ENV.CLIENT_URLS.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error(`Origin not allowed by CORS: ${origin}`));
+      // Withhold the CORS headers for unknown origins (the browser then blocks the
+      // response) rather than throwing, which would surface as a noisy 500.
+      callback(null, !origin || ENV.CLIENT_URLS.includes(origin));
     },
     credentials: true,
   })

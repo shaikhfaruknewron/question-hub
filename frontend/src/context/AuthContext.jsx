@@ -11,21 +11,36 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const loadUser = useCallback(async () => {
+  // Resolves to the user, or null when not signed in / the session expired —
+  // both are normal on first load.
+  const fetchMe = useCallback(async () => {
     try {
       const res = await api.get("/auth/me");
-      setUser(res.data);
+      return res.data;
     } catch {
-      // Not signed in (or the session expired) — both are normal on first load.
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+      return null;
     }
   }, []);
 
   useEffect(() => {
-    loadUser();
-  }, [loadUser]);
+    let active = true;
+
+    fetchMe().then((currentUser) => {
+      if (!active) return;
+      setUser(currentUser);
+      setIsLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [fetchMe]);
+
+  const refreshUser = useCallback(async () => {
+    const currentUser = await fetchMe();
+    setUser(currentUser);
+    return currentUser;
+  }, [fetchMe]);
 
   const login = useCallback(async (email, password) => {
     const res = await api.post("/auth/login", { email, password });
@@ -48,8 +63,8 @@ export const AuthProvider = ({ children }) => {
   }, [router]);
 
   const value = useMemo(
-    () => ({ user, isLoading, login, register, logout, refreshUser: loadUser }),
-    [user, isLoading, login, register, logout, loadUser]
+    () => ({ user, isLoading, login, register, logout, refreshUser }),
+    [user, isLoading, login, register, logout, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
