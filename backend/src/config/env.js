@@ -37,4 +37,9 @@ export const ENV = {
     .split(",")
     .map((url) => url.trim())
     .filter(Boolean),
+  // Optional override for machines whose system DNS cannot resolve SRV records.
+  DNS_SERVERS: (process.env.DNS_SERVERS || "")
+    .split(",")
+    .map((server) => server.trim())
+    .filter(Boolean),
 };

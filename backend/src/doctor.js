@@ -11,6 +11,7 @@ import dns from "dns";
 import net from "net";
 import os from "os";
 import { ENV } from "./config/env.js";
+import { applyDnsOverride } from "./config/dns.js";
 
 const ok = (msg) => console.log(`  [ok]    ${msg}`);
 const bad = (msg) => console.log(`  [FAIL]  ${msg}`);
@@ -67,7 +68,28 @@ const run = async () => {
 
   section("Environment");
   info(`Node ${process.version} on ${os.platform()} ${os.release()}`);
-  info(`System DNS servers: ${dns.getServers().join(", ") || "(none)"}`);
+
+  const systemServers = dns.getServers();
+  info(`System DNS servers: ${systemServers.join(", ") || "(none)"}`);
+
+  // A loopback resolver means a local DNS proxy is expected to be listening.
+  // When one isn't (usually an uninstalled VPN or ad blocker), every SRV lookup
+  // is refused while ordinary hostname lookups still work via the OS resolver.
+  const loopbackOnly =
+    systemServers.length > 0 &&
+    systemServers.every((s) => s === "127.0.0.1" || s === "::1");
+
+  if (loopbackOnly) {
+    bad("Your DNS server is set to your own machine (127.0.0.1) and nothing is listening there");
+    info("Usually left behind by an uninstalled VPN or DNS filter (WARP, NordVPN, Pi-hole, AdGuard)");
+  }
+
+  const overridden = applyDnsOverride();
+  if (overridden) {
+    ok(`DNS_SERVERS override active: ${ENV.DNS_SERVERS.join(", ")}`);
+  } else if (loopbackOnly) {
+    info("No DNS_SERVERS override set in .env");
+  }
 
   section("Connection string");
   const uri = ENV.MONGO_URI;
@@ -117,8 +139,10 @@ const run = async () => {
         hosts = viaPublic.records.map((r) => `${r.name}:${r.port}`);
         problems.push(
           "Your system DNS refuses SRV queries but 8.8.8.8 answers them.\n" +
-            "     Fix: set your adapter's DNS to 8.8.8.8 / 1.1.1.1 and run 'ipconfig /flushdns',\n" +
-            "     OR switch MONGO_URI to the non-SRV 'mongodb://' form (see README)."
+            "     Easiest fix (no admin rights needed) — add this line to backend/.env:\n" +
+            "         DNS_SERVERS=8.8.8.8,1.1.1.1\n" +
+            "     Or fix it system-wide: set your adapter's DNS to 8.8.8.8 / 1.1.1.1,\n" +
+            "     then run 'ipconfig /flushdns'."
         );
       }
     } else {
@@ -190,11 +214,20 @@ const run = async () => {
         "Credentials rejected. Check the username/password in .env, and remember that\n" +
           "     special characters in the password must be percent-encoded."
       );
+    } else if (/querySrv|_mongodb\._tcp/i.test(error.message)) {
+      problems.push(
+        "The driver's own SRV lookup failed even though the checks above passed.\n" +
+          "     Add this line to backend/.env so Node uses a working resolver:\n" +
+          "         DNS_SERVERS=8.8.8.8,1.1.1.1"
+      );
     } else if (/timed out|ServerSelection/i.test(error.message)) {
       problems.push(
         "Reached DNS but not the server. Add your current IP under\n" +
           "     Atlas > Network Access, or allow 0.0.0.0/0 temporarily to confirm."
       );
+    } else {
+      // Never let a failed handshake fall through to an "everything works" verdict.
+      problems.push(`Could not connect: ${error.message}`);
     }
   }
 

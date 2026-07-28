@@ -48,11 +48,22 @@ Check whether SRV resolution works at all:
 nslookup -type=SRV _mongodb._tcp.<your-cluster>.mongodb.net 8.8.8.8
 ```
 
-Fix it either way:
+A common cause on Windows is a leftover `127.0.0.1` DNS entry from an uninstalled
+VPN or ad blocker (Cloudflare WARP, NordVPN, Pi-hole, AdGuard). Ordinary browsing
+still works, and MongoDB Compass still connects — it uses its own resolver — but
+Node's SRV lookup is refused.
 
-1. **Change your DNS** to `8.8.8.8` / `1.1.1.1` (Windows: Settings → Network →
+Fix it any of these ways:
+
+1. **Point Node at a working resolver** (no admin rights needed) — add to `.env`:
+
+   ```
+   DNS_SERVERS=8.8.8.8,1.1.1.1
+   ```
+
+2. **Change your system DNS** to `8.8.8.8` / `1.1.1.1` (Settings → Network →
    Adapter options → IPv4 → Properties), then run `ipconfig /flushdns`.
-2. **Or bypass SRV entirely** using the non-SRV connection string — in Atlas pick
+3. **Or bypass SRV entirely** using the non-SRV connection string — in Atlas pick
    Connect → Drivers → *Node.js 2.2.12 or later*. It lists the shard hosts
    directly, so no SRV lookup happens:
 
