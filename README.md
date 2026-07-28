@@ -25,7 +25,18 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
 `GET /health` returns the API status without touching the database.
 
-### Troubleshooting: `querySrv ECONNREFUSED` / `ENOTFOUND _mongodb._tcp...`
+### Troubleshooting connection problems
+
+Run the diagnostic first — it tests DNS, hostname resolution, port 27017 and
+authentication separately and tells you which one is actually broken:
+
+```bash
+npm run doctor
+```
+
+The output is safe to share; credentials are redacted.
+
+#### `querySrv ECONNREFUSED` / `ENOTFOUND _mongodb._tcp...`
 
 This is a **DNS** failure, not a MongoDB or credentials problem — `mongodb+srv://`
 requires an SRV record lookup, and many home routers, office networks and VPNs
@@ -51,6 +62,24 @@ Fix it either way:
 
 If DNS resolves but the connection still times out, check that your current IP is
 in the Atlas **Network Access** allow-list.
+
+#### Nothing works — use a local database
+
+Some office and campus networks block outbound port 27017 entirely, which neither
+fix above can work around. Run MongoDB locally instead:
+
+```bash
+docker run -d -p 27017:27017 --name question-hub-db mongo:8
+```
+
+(or install MongoDB Community Server). Then in `backend/.env`:
+
+```
+MONGO_URI=mongodb://127.0.0.1:27017
+DB_NAME=question-hub
+```
+
+Run `npm run seed` and everything works offline with no Atlas access.
 
 ### Seeded demo accounts
 
