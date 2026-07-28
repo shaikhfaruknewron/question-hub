@@ -36,12 +36,6 @@ export const AuthProvider = ({ children }) => {
     };
   }, [fetchMe]);
 
-  const refreshUser = useCallback(async () => {
-    const currentUser = await fetchMe();
-    setUser(currentUser);
-    return currentUser;
-  }, [fetchMe]);
-
   const login = useCallback(async (email, password) => {
     const res = await api.post("/auth/login", { email, password });
     setAccessToken(res.data.accessToken);
@@ -63,8 +57,8 @@ export const AuthProvider = ({ children }) => {
   }, [router]);
 
   const value = useMemo(
-    () => ({ user, isLoading, login, register, logout, refreshUser }),
-    [user, isLoading, login, register, logout, refreshUser]
+    () => ({ user, isLoading, login, register, logout }),
+    [user, isLoading, login, register, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

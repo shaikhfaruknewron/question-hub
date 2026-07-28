@@ -6,11 +6,11 @@ import { api } from "@/src/utils/api";
 // Fetches `endpoint` and re-fetches whenever it changes.
 // `isLoading` is derived rather than stored, so the effect never calls setState
 // synchronously (see the react-hooks/set-state-in-effect rule).
-const useFetch = (endpoint, { skip = false } = {}) => {
+const useFetch = (endpoint) => {
   const [reloadToken, setReloadToken] = useState(0);
   const [result, setResult] = useState({ key: null, data: null, error: null });
 
-  const key = skip || !endpoint ? null : `${endpoint}#${reloadToken}`;
+  const key = endpoint ? `${endpoint}#${reloadToken}` : null;
   const isLoading = key !== null && result.key !== key;
 
   useEffect(() => {
