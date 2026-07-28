@@ -1,6 +1,5 @@
 "use client";
 
-import PropTypes from "prop-types";
 import { LogOut } from "lucide-react";
 import useAuth from "@/src/hooks/useAuth";
 
@@ -28,10 +27,6 @@ const Topbar = ({ title }) => {
       </div>
     </header>
   );
-};
-
-Topbar.propTypes = {
-  title: PropTypes.string.isRequired,
 };
 
 export default Topbar;

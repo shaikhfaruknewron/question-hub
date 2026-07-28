@@ -11,15 +11,24 @@ import { api } from "@/src/utils/api";
 const EditQuestionPage = () => {
   const router = useRouter();
   const params = useParams();
-  const { data: question, isLoading } = useFetch(`/questions/${params.id}`, [params.id]);
+  const {
+    data: question,
+    isLoading,
+    error: loadError,
+  } = useFetch(`/questions/${params.id}`);
   const { data: categories } = useFetch("/categories");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (payload) => {
     setIsSubmitting(true);
+    setError("");
     try {
       await api.patch(`/questions/${params.id}`, payload);
       router.push("/dashboard/questions");
+    } catch (err) {
+      const detail = err.errors?.map((e) => e.message).join(", ");
+      setError(detail ? `${err.message}: ${detail}` : err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -27,6 +36,10 @@ const EditQuestionPage = () => {
 
   if (isLoading) {
     return <Spinner />;
+  }
+
+  if (loadError || !question) {
+    return <p className="text-sm text-red-600">{loadError || "Question not found."}</p>;
   }
 
   return (
@@ -38,6 +51,7 @@ const EditQuestionPage = () => {
           categories={categories || []}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
+          error={error}
         />
       </Card>
     </div>

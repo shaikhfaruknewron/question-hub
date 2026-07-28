@@ -1,4 +1,3 @@
-import PropTypes from "prop-types";
 import { AuthProvider } from "@/src/context/AuthContext";
 import "./globals.css";
 
@@ -15,10 +14,6 @@ const RootLayout = ({ children }) => {
       </body>
     </html>
   );
-};
-
-RootLayout.propTypes = {
-  children: PropTypes.node.isRequired,
 };
 
 export default RootLayout;

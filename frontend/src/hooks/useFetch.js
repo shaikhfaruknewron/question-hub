@@ -1,24 +1,38 @@
-import { useEffect, useState, useCallback } from "react";
+"use client";
+
+import { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "@/src/utils/api";
 
-const useFetch = (endpoint, deps = []) => {
+
+const useFetch = (endpoint, { skip = false } = {}) => {
   const [data, setData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!skip);
   const [error, setError] = useState(null);
+  // Guards against a slow earlier request overwriting a newer response.
+  const requestIdRef = useRef(0);
 
   const fetchData = useCallback(async () => {
+    if (skip || !endpoint) {
+      setIsLoading(false);
+      return;
+    }
+
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setError(null);
+
     try {
       const res = await api.get(endpoint);
-      setData(res.data);
+      if (requestId === requestIdRef.current) setData(res.data);
     } catch (err) {
-      setError(err.message);
+      if (requestId === requestIdRef.current) {
+        setError(err.message);
+        setData(null);
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [endpoint, skip]);
 
   useEffect(() => {
     fetchData();

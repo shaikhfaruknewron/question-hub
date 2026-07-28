@@ -1,4 +1,3 @@
-import PropTypes from "prop-types";
 import Link from "next/link";
 import Badge from "@/src/components/ui/Badge";
 import Card from "@/src/components/ui/Card";
@@ -16,25 +15,13 @@ const TestCard = ({ test }) => {
         <span>·</span>
         <span>{test.totalMarks} marks</span>
         <span>·</span>
-        <span>{test.questions?.length || 0} questions</span>
+        <span>{test.questionCount ?? test.questions?.length ?? 0} questions</span>
       </div>
       <Link href={`/dashboard/tests/${test._id}`} className="text-xs font-medium text-primary-600 hover:underline">
         View details
       </Link>
     </Card>
   );
-};
-
-TestCard.propTypes = {
-  test: PropTypes.shape({
-    _id: PropTypes.string.isRequired,
-    title: PropTypes.string.isRequired,
-    description: PropTypes.string,
-    visibility: PropTypes.string.isRequired,
-    durationMinutes: PropTypes.number.isRequired,
-    totalMarks: PropTypes.number,
-    questions: PropTypes.array,
-  }).isRequired,
 };
 
 export default TestCard;

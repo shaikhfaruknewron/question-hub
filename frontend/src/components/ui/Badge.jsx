@@ -1,5 +1,3 @@
-import PropTypes from "prop-types";
-
 const COLORS = {
   easy: "bg-green-100 text-green-700",
   medium: "bg-yellow-100 text-yellow-700",
@@ -9,7 +7,7 @@ const COLORS = {
   archived: "bg-gray-100 text-gray-500",
 };
 
-const Badge = ({ label, tone }) => {
+const Badge = ({ label, tone = "draft" }) => {
   return (
     <span
       className={`inline-flex items-center rounded-xl px-3 py-1 text-xs font-medium ${
@@ -19,15 +17,6 @@ const Badge = ({ label, tone }) => {
       {label}
     </span>
   );
-};
-
-Badge.propTypes = {
-  label: PropTypes.string.isRequired,
-  tone: PropTypes.string,
-};
-
-Badge.defaultProps = {
-  tone: "draft",
 };
 
 export default Badge;

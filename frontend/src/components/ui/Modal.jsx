@@ -1,6 +1,5 @@
 "use client";
 
-import PropTypes from "prop-types";
 import { X } from "lucide-react";
 
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -24,13 +23,6 @@ const Modal = ({ isOpen, onClose, title, children }) => {
       </div>
     </div>
   );
-};
-
-Modal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  title: PropTypes.string.isRequired,
-  children: PropTypes.node.isRequired,
 };
 
 export default Modal;

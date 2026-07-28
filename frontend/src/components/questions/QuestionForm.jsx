@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import PropTypes from "prop-types";
 import { Plus, Trash2 } from "lucide-react";
 import Input from "@/src/components/ui/Input";
 import Select from "@/src/components/ui/Select";
@@ -10,39 +9,86 @@ import { QUESTION_TYPES, DIFFICULTY_LEVELS } from "@/src/utils/constants";
 
 const emptyOption = () => ({ text: "", isCorrect: false });
 
-const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting }) => {
+const CHOICE_TYPES = ["single-choice", "multiple-choice", "true-false"];
+
+const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting = false, error = "" }) => {
   const [form, setForm] = useState({
     title: initialValues?.title || "",
     type: initialValues?.type || "single-choice",
     category: initialValues?.category?._id || initialValues?.category || "",
     difficulty: initialValues?.difficulty || "medium",
-    marks: initialValues?.marks || 1,
-    negativeMarks: initialValues?.negativeMarks || 0,
-    options: initialValues?.options?.length ? initialValues.options : [emptyOption(), emptyOption()],
+    marks: initialValues?.marks ?? 1,
+    negativeMarks: initialValues?.negativeMarks ?? 0,
+    options: initialValues?.options?.length
+      ? initialValues.options.map((o) => ({ text: o.text, isCorrect: Boolean(o.isCorrect) }))
+      : [emptyOption(), emptyOption()],
     explanation: initialValues?.explanation || "",
   });
+  const [validationError, setValidationError] = useState("");
 
   const updateField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const updateOption = (index, field, value) => {
     setForm((prev) => {
       const options = [...prev.options];
+      // Single-choice and true/false allow exactly one correct answer.
+      if (field === "isCorrect" && value && prev.type !== "multiple-choice") {
+        return {
+          ...prev,
+          options: options.map((opt, i) => ({ ...opt, isCorrect: i === index })),
+        };
+      }
       options[index] = { ...options[index], [field]: value };
       return { ...prev, options };
     });
   };
 
-  const addOption = () => setForm((prev) => ({ ...prev, options: [...prev.options, emptyOption()] }));
+  const addOption = () =>
+    setForm((prev) => ({ ...prev, options: [...prev.options, emptyOption()] }));
 
   const removeOption = (index) =>
     setForm((prev) => ({ ...prev, options: prev.options.filter((_, i) => i !== index) }));
 
+  const showOptions = CHOICE_TYPES.includes(form.type);
+
   const handleSubmit = (event) => {
     event.preventDefault();
-    onSubmit({ ...form, marks: Number(form.marks), negativeMarks: Number(form.negativeMarks) });
+    setValidationError("");
+
+    if (!form.category) {
+      setValidationError("Pick a category first — create one if the list is empty.");
+      return;
+    }
+
+    const payload = {
+      title: form.title,
+      type: form.type,
+      category: form.category,
+      difficulty: form.difficulty,
+      marks: Number(form.marks),
+      negativeMarks: Number(form.negativeMarks),
+      explanation: form.explanation,
+    };
+
+    if (showOptions) {
+      const options = form.options.filter((opt) => opt.text.trim());
+      if (options.length < 2) {
+        setValidationError("Add at least two options.");
+        return;
+      }
+      if (!options.some((opt) => opt.isCorrect)) {
+        setValidationError("Mark at least one option as correct.");
+        return;
+      }
+      payload.options = options;
+    } else {
+      payload.options = [];
+    }
+
+    onSubmit(payload);
   };
 
-  const showOptions = form.type === "single-choice" || form.type === "multiple-choice" || form.type === "true-false";
+  const message = validationError || error;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -67,7 +113,9 @@ const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting }) => 
           label="Category"
           value={form.category}
           onChange={(e) => updateField("category", e.target.value)}
+          placeholder={categories.length ? "Select a category" : "No categories yet"}
           options={categories.map((c) => ({ value: c._id, label: c.name }))}
+          required
         />
       </div>
 
@@ -99,11 +147,17 @@ const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting }) => 
 
       {showOptions && (
         <div className="flex flex-col gap-3">
-          <span className="text-sm font-medium text-gray-700">Options</span>
+          <span className="text-sm font-medium text-gray-700">
+            Options{" "}
+            <span className="font-normal text-gray-500">
+              (tick the correct {form.type === "multiple-choice" ? "answers" : "answer"})
+            </span>
+          </span>
           {form.options.map((option, index) => (
             <div key={`option-${index}`} className="flex items-center gap-3">
               <input
-                type="checkbox"
+                type={form.type === "multiple-choice" ? "checkbox" : "radio"}
+                name="correct-option"
                 aria-label={`Mark option ${index + 1} as correct`}
                 checked={option.isCorrect}
                 onChange={(e) => updateOption(index, "isCorrect", e.target.checked)}
@@ -118,7 +172,8 @@ const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting }) => 
                 type="button"
                 onClick={() => removeOption(index)}
                 aria-label={`Remove option ${index + 1}`}
-                className="text-gray-400 hover:text-red-600"
+                disabled={form.options.length <= 2}
+                className="text-gray-400 hover:text-red-600 disabled:opacity-40"
               >
                 <Trash2 size={16} />
               </button>
@@ -138,23 +193,17 @@ const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting }) => 
         onChange={(e) => updateField("explanation", e.target.value)}
       />
 
+      {message && (
+        <p role="alert" className="text-sm text-red-600">
+          {message}
+        </p>
+      )}
+
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Saving..." : "Save question"}
       </Button>
     </form>
   );
-};
-
-QuestionForm.propTypes = {
-  initialValues: PropTypes.object,
-  categories: PropTypes.arrayOf(PropTypes.object).isRequired,
-  onSubmit: PropTypes.func.isRequired,
-  isSubmitting: PropTypes.bool,
-};
-
-QuestionForm.defaultProps = {
-  initialValues: null,
-  isSubmitting: false,
 };
 
 export default QuestionForm;

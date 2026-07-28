@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Card from "@/src/components/ui/Card";
 import Badge from "@/src/components/ui/Badge";
@@ -13,22 +14,30 @@ const TestDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const { data: test, isLoading, refetch } = useFetch(`/tests/${params.id}`, [params.id]);
+  const { data: test, isLoading, error, refetch } = useFetch(`/tests/${params.id}`);
+  const [actionError, setActionError] = useState("");
+
+  const isStudent = user?.role === "student";
 
   const handlePublish = async () => {
-    await api.patch(`/tests/${params.id}/publish`, {});
-    refetch();
+    setActionError("");
+    try {
+      await api.patch(`/tests/${params.id}/publish`);
+      refetch();
+    } catch (err) {
+      setActionError(err.message);
+    }
   };
 
-  const handleStartAttempt = () => {
-    router.push(`/dashboard/tests/${params.id}/attempt`);
-  };
-
-  if (isLoading || !test) {
+  if (isLoading) {
     return <Spinner />;
   }
 
-  const isStudent = user?.role === "student";
+  if (error || !test) {
+    return <p className="text-sm text-red-600">{error || "Test not found."}</p>;
+  }
+
+  const questionCount = test.questionCount ?? test.questions?.length ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,17 +65,30 @@ const TestDetailPage = () => {
           </div>
           <div>
             <span className="text-gray-500">Questions</span>
-            <p className="font-medium">{test.questions?.length}</p>
+            <p className="font-medium">{questionCount}</p>
+          </div>
+          <div>
+            <span className="text-gray-500">Attempts allowed</span>
+            <p className="font-medium">{test.maxAttempts}</p>
           </div>
         </div>
       </Card>
 
-      {!isStudent && test.visibility === "draft" && <Button onClick={handlePublish}>Publish test</Button>}
-      {isStudent && test.visibility === "published" && (
-        <Button onClick={handleStartAttempt} className="w-fit">
-          Start attempt
+      {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+
+      <div className="flex gap-3">
+        {!isStudent && test.visibility === "draft" && (
+          <Button onClick={handlePublish}>Publish test</Button>
+        )}
+        {isStudent && test.visibility === "published" && (
+          <Button onClick={() => router.push(`/dashboard/tests/${params.id}/attempt`)}>
+            Start attempt
+          </Button>
+        )}
+        <Button variant="outline" onClick={() => router.push("/dashboard/tests")}>
+          Back to tests
         </Button>
-      )}
+      </div>
     </div>
   );
 };

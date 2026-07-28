@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import PropTypes from "prop-types";
 import Sidebar from "@/src/components/layout/Sidebar";
 import Topbar from "@/src/components/layout/Topbar";
 import Spinner from "@/src/components/ui/Spinner";
@@ -35,10 +34,6 @@ const DashboardLayout = ({ children }) => {
       </div>
     </div>
   );
-};
-
-DashboardLayout.propTypes = {
-  children: PropTypes.node.isRequired,
 };
 
 export default DashboardLayout;

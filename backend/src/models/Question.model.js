@@ -48,7 +48,10 @@ const questionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-questionSchema.index({ title: "text", tags: 1 });
+// `tags` must be part of the text index, not a compound b-tree key: a compound text
+// index cannot have an array in its non-text field, which rejects every tagged question.
+questionSchema.index({ title: "text", tags: "text" });
+questionSchema.index({ tags: 1 });
 questionSchema.index({ category: 1, difficulty: 1, type: 1 });
 
 export default mongoose.model("Question", questionSchema);

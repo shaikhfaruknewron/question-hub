@@ -1,4 +1,3 @@
-import PropTypes from "prop-types";
 import TestCard from "./TestCard";
 
 const TestList = ({ tests }) => {
@@ -13,10 +12,6 @@ const TestList = ({ tests }) => {
       ))}
     </div>
   );
-};
-
-TestList.propTypes = {
-  tests: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 
 export default TestList;

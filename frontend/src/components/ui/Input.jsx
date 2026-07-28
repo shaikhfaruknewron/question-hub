@@ -1,6 +1,4 @@
-import PropTypes from "prop-types";
-
-const Input = ({ label, id, error, ...rest }) => {
+const Input = ({ label = "", id, error = "", ...rest }) => {
   return (
     <div className="flex flex-col gap-1">
       {label && (
@@ -19,17 +17,6 @@ const Input = ({ label, id, error, ...rest }) => {
       {error && <span className="text-xs text-red-600">{error}</span>}
     </div>
   );
-};
-
-Input.propTypes = {
-  label: PropTypes.string,
-  id: PropTypes.string.isRequired,
-  error: PropTypes.string,
-};
-
-Input.defaultProps = {
-  label: "",
-  error: "",
 };
 
 export default Input;

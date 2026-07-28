@@ -1,6 +1,4 @@
-import PropTypes from "prop-types";
-
-const Select = ({ label, id, options, error, ...rest }) => {
+const Select = ({ label = "", id, options = [], error = "", placeholder, ...rest }) => {
   return (
     <div className="flex flex-col gap-1">
       {label && (
@@ -16,6 +14,11 @@ const Select = ({ label, id, options, error, ...rest }) => {
         }`}
         {...rest}
       >
+        {placeholder && (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+        )}
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
@@ -25,20 +28,6 @@ const Select = ({ label, id, options, error, ...rest }) => {
       {error && <span className="text-xs text-red-600">{error}</span>}
     </div>
   );
-};
-
-Select.propTypes = {
-  label: PropTypes.string,
-  id: PropTypes.string.isRequired,
-  options: PropTypes.arrayOf(
-    PropTypes.shape({ value: PropTypes.string.isRequired, label: PropTypes.string.isRequired })
-  ).isRequired,
-  error: PropTypes.string,
-};
-
-Select.defaultProps = {
-  label: "",
-  error: "",
 };
 
 export default Select;

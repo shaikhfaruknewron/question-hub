@@ -29,9 +29,9 @@ const testSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-testSchema.pre("save", function (next) {
+// Mongoose 9 middleware no longer receives `next`; returning resolves the hook.
+testSchema.pre("save", function () {
   this.totalMarks = this.questions.reduce((sum, q) => sum + q.marks, 0);
-  next();
 });
 
 export default mongoose.model("Test", testSchema);
