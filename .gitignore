@@ -1,0 +1,9 @@
+
+.next
+.env.local
+.claude
+node_modules
+.env
+uploads
+
+atlas-credentials.env
