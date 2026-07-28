@@ -7,6 +7,25 @@ const startServer = async () => {
     await connectDB();
   } catch (error) {
     console.error("[server] Failed to connect to MongoDB:", error.message);
+
+    // `mongodb+srv://` needs a DNS SRV lookup, which plenty of home routers,
+    // office networks and VPNs refuse. The failure looks like a database problem
+    // but the database was never contacted.
+    if (/querySrv|ENOTFOUND _mongodb\._tcp/.test(error.message)) {
+      console.error(
+        [
+          "",
+          "  This is a DNS failure, not a MongoDB or credentials problem.",
+          "  Your network cannot resolve SRV records. Either:",
+          "    1. Set your DNS to 8.8.8.8 / 1.1.1.1, then run: ipconfig /flushdns",
+          "    2. Or use the non-SRV connection string (Atlas > Connect > Drivers >",
+          "       'Node.js 2.2.12 or later'), which lists the hosts directly and",
+          "       needs no SRV lookup.",
+          "",
+        ].join("\n")
+      );
+    }
+
     process.exit(1);
   }
 

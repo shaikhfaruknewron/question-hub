@@ -25,6 +25,33 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
 `GET /health` returns the API status without touching the database.
 
+### Troubleshooting: `querySrv ECONNREFUSED` / `ENOTFOUND _mongodb._tcp...`
+
+This is a **DNS** failure, not a MongoDB or credentials problem — `mongodb+srv://`
+requires an SRV record lookup, and many home routers, office networks and VPNs
+refuse SRV queries. The database is never contacted.
+
+Check whether SRV resolution works at all:
+
+```bash
+nslookup -type=SRV _mongodb._tcp.<your-cluster>.mongodb.net 8.8.8.8
+```
+
+Fix it either way:
+
+1. **Change your DNS** to `8.8.8.8` / `1.1.1.1` (Windows: Settings → Network →
+   Adapter options → IPv4 → Properties), then run `ipconfig /flushdns`.
+2. **Or bypass SRV entirely** using the non-SRV connection string — in Atlas pick
+   Connect → Drivers → *Node.js 2.2.12 or later*. It lists the shard hosts
+   directly, so no SRV lookup happens:
+
+   ```
+   MONGO_URI=mongodb://<user>:<pass>@host-00:27017,host-01:27017,host-02:27017/?ssl=true&replicaSet=<replica-set>&authSource=admin&retryWrites=true&w=majority
+   ```
+
+If DNS resolves but the connection still times out, check that your current IP is
+in the Atlas **Network Access** allow-list.
+
 ### Seeded demo accounts
 
 All three use the password `Password123`:
