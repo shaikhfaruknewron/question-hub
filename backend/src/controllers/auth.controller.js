@@ -4,7 +4,9 @@ import ApiResponse from "../utils/ApiResponse.js";
 import User from "../models/User.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateTokens.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { ENV } from "../config/env.js";
+import { sendForgotPasswordEmail } from "../services/email.service.js";
 
 const isProduction = ENV.NODE_ENV === "production";
 
@@ -77,17 +79,47 @@ export const forgetPassword = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found!");
   }
 
-  // Here you would typically send an email with a password reset link
-  // For now, we'll just return a success message
-  res.status(200).json(new ApiResponse(200, {}, "Password reset instructions sent to your email"));
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  user.resetPasswordToken = hashedToken;
+  user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
+  await user.save();
+
+  const baseUrl = ENV.CLIENT_URLS[0] || "http://localhost:3000";
+  const resetLink = `${baseUrl}/reset-password?token=${rawToken}`;
+
+  await sendForgotPasswordEmail({
+    to: user.email,
+    name: user.name,
+    resetLink,
+    expiryMinutes: 15,
+  });
+
+  res.status(200).json(new ApiResponse(200, {}, "Password reset link sent to your email"));
 });
 
-export const resetPassword = async (req, res) => {
-    res.json({
-        success: true,
-        message: "Reset password endpoint"
-    });
-};
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired reset token");
+  }
+
+  user.password = newPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
+  await user.save();
+
+  res.status(200).json(new ApiResponse(200, {}, "Password reset successfully"));
+});
 
 export const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingToken = req.cookies?.refreshToken || req.body.refreshToken;
