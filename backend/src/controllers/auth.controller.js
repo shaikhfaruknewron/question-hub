@@ -6,12 +6,10 @@ import { generateAccessToken, generateRefreshToken } from "../utils/generateToke
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { ENV } from "../config/env.js";
-import { sendForgotPasswordEmail } from "../services/email.service.js";
+import { sendForgotPasswordEmail, sendVerificationEmail } from "../services/email.service.js";
 
 const isProduction = ENV.NODE_ENV === "production";
 
-// In production the API and the frontend usually live on different domains, which
-// requires SameSite=None; that in turn requires Secure.
 const cookieOptions = {
   httpOnly: true,
   secure: isProduction,
@@ -30,21 +28,102 @@ export const register = asyncHandler(async (req, res) => {
     throw new ApiError(409, "An account with this email already exists");
   }
 
-  const user = await User.create({ name, email, password, role });
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  const user = await User.create({
+    name,
+    email,
+    password,
+    role,
+    isEmailVerified: false,
+    emailVerificationToken: hashedToken,
+    emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000,
+  });
+
+  const baseUrl = ENV.CLIENT_URLS[0] || "http://localhost:3000";
+  const verificationLink = `${baseUrl}/verify-email?token=${rawToken}`;
+
+  await sendVerificationEmail({
+    to: user.email,
+    name: user.name,
+    verificationLink,
+  });
 
   res
     .status(201)
-    .json(new ApiResponse(201, { id: user._id, name: user.name, email: user.email, role: user.role }, "Account created"));
+    .json(
+      new ApiResponse(
+        201,
+        { id: user._id, name: user.name, email: user.email, role: user.role, isEmailVerified: user.isEmailVerified },
+        "Registration successful. Please check your email to verify your account."
+      )
+    );
+});
+
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    emailVerificationToken: hashedToken,
+    emailVerificationExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired verification token");
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpires = undefined;
+  await user.save();
+
+  res.status(200).json(new ApiResponse(200, {}, "Email verified successfully"));
+});
+
+export const resendVerificationEmail = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.isEmailVerified) {
+    throw new ApiError(400, "Email is already verified");
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+  await user.save();
+
+  const baseUrl = ENV.CLIENT_URLS[0] || "http://localhost:3000";
+  const verificationLink = `${baseUrl}/verify-email?token=${rawToken}`;
+
+  await sendVerificationEmail({
+    to: user.email,
+    name: user.name,
+    verificationLink,
+  });
+
+  res.status(200).json(new ApiResponse(200, {}, "Verification email sent successfully"));
 });
 
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-
-
   const user = await User.findOne({ email }).select("+password +refreshToken");
   if (!user || !(await user.comparePassword(password))) {
     throw new ApiError(401, "Invalid email or password");
+  }
+
+  if (!user.isEmailVerified) {
+    throw new ApiError(403, "Please verify your email address before logging in");
   }
 
   const accessToken = generateAccessToken(user._id, user.role);

@@ -9,9 +9,12 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["admin", "teacher", "student"], default: "student" },
     avatar: { type: String, default: "" },
     isActive: { type: Boolean, default: true },
+    isEmailVerified: { type: Boolean, default: false },
     refreshToken: { type: String, select: false },
     resetPasswordToken: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },
+    emailVerificationToken: { type: String, select: false },
+    emailVerificationExpires: { type: Date, select: false },
   },
   { timestamps: true }
 );

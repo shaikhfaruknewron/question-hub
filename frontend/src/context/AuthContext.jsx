@@ -11,8 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Resolves to the user, or null when not signed in / the session expired —
-  // both are normal on first load.
   const fetchMe = useCallback(async () => {
     try {
       const res = await api.get("/auth/me");
@@ -48,17 +46,20 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   }, []);
 
- const resetPassword = useCallback(async (email, code, password) => {
-  const res = await api.post("/auth/reset-password", {
-    email,
-    code,
-    password,
-  });
+  const resetPassword = useCallback(async (token, newPassword) => {
+    const res = await api.post("/auth/reset-password", { token, newPassword });
+    return res.data;
+  }, []);
 
-  return res.data;
-}, []);
+  const verifyEmail = useCallback(async (token) => {
+    const res = await api.post("/auth/verify-email", { token });
+    return res.data;
+  }, []);
 
-  
+  const resendVerification = useCallback(async (email) => {
+    const res = await api.post("/auth/resend-verification", { email });
+    return res.data;
+  }, []);
 
   const register = useCallback((payload) => api.post("/auth/register", payload), []);
 
@@ -66,7 +67,6 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.post("/auth/logout");
     } finally {
-      // Clear locally even if the server call fails, otherwise the UI gets stuck.
       setAccessToken(null);
       setUser(null);
       router.replace("/login");
@@ -74,8 +74,18 @@ export const AuthProvider = ({ children }) => {
   }, [router]);
 
   const value = useMemo(
-    () => ({ user, isLoading, login, register, logout, forgetPassword ,resetPassword}),
-    [user, isLoading, login, register, logout]
+    () => ({
+      user,
+      isLoading,
+      login,
+      register,
+      logout,
+      forgetPassword,
+      resetPassword,
+      verifyEmail,
+      resendVerification,
+    }),
+    [user, isLoading, login, register, logout, forgetPassword, resetPassword, verifyEmail, resendVerification]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

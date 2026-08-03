@@ -108,15 +108,21 @@ export const api = {
 };
 
 export async function forgetPassword(email) {
-  const response = await api.post("/auth/forgot-password", {
-    email,
-  });
-
+  const response = await api.post("/auth/forget-password", { email });
   return response.data;
 }
 
-export async function resetPassword(data) {
-  const response = await api.post("/auth/reset-password", data);
+export async function resetPassword({ token, newPassword }) {
+  const response = await api.post("/auth/reset-password", { token, newPassword });
+  return response.data;
+}
 
+export async function verifyEmail(token) {
+  const response = await api.post("/auth/verify-email", { token });
+  return response.data;
+}
+
+export async function resendVerification(email) {
+  const response = await api.post("/auth/resend-verification", { email });
   return response.data;
 }

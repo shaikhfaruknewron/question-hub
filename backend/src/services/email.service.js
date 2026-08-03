@@ -40,3 +40,24 @@ export const sendForgotPasswordEmail = async ({ to, name, resetLink, expiryMinut
 
   return transporter.sendMail(mailOptions);
 };
+
+export const sendVerificationEmail = async ({ to, name, verificationLink }) => {
+  const templatePath = path.join(__dirname, "../templates/emails/verifyEmail.html");
+  let html = fs.readFileSync(templatePath, "utf-8");
+
+  html = html
+    .replace(/{{name}}/g, name || "User")
+    .replace(/{{verificationLink}}/g, verificationLink)
+    .replace(/{{year}}/g, new Date().getFullYear().toString());
+
+  const transporter = createTransporter();
+
+  const mailOptions = {
+    from: ENV.EMAIL_FROM || ENV.SMTP_USER,
+    to,
+    subject: "Verify Your Email Address - Question Hub",
+    html,
+  };
+
+  return transporter.sendMail(mailOptions);
+};
