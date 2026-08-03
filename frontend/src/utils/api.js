@@ -106,3 +106,17 @@ export const api = {
     request(endpoint, { method: "PATCH", body: JSON.stringify(body ?? {}) }),
   delete: (endpoint) => request(endpoint, { method: "DELETE" }),
 };
+
+export async function forgetPassword(email) {
+  const response = await api.post("/auth/forgot-password", {
+    email,
+  });
+
+  return response.data;
+}
+
+export async function resetPassword(data) {
+  const response = await api.post("/auth/reset-password", data);
+
+  return response.data;
+}

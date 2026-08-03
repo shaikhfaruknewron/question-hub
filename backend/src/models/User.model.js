@@ -24,4 +24,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
+resetCODE: String;
+resetCODEExpiry: Date;
+
 export default mongoose.model("User", userSchema);

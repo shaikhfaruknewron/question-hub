@@ -43,6 +43,23 @@ export const AuthProvider = ({ children }) => {
     return res.data.user;
   }, []);
 
+  const forgetPassword = useCallback(async (email) => {
+    const res = await api.post("/auth/forget-password", { email });
+    return res.data;
+  }, []);
+
+ const resetPassword = useCallback(async (email, code, password) => {
+  const res = await api.post("/auth/reset-password", {
+    email,
+    code,
+    password,
+  });
+
+  return res.data;
+}, []);
+
+  
+
   const register = useCallback((payload) => api.post("/auth/register", payload), []);
 
   const logout = useCallback(async () => {
@@ -57,7 +74,7 @@ export const AuthProvider = ({ children }) => {
   }, [router]);
 
   const value = useMemo(
-    () => ({ user, isLoading, login, register, logout }),
+    () => ({ user, isLoading, login, register, logout, forgetPassword ,resetPassword}),
     [user, isLoading, login, register, logout]
   );
 

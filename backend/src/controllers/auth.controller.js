@@ -38,6 +38,8 @@ export const register = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
+
+
   const user = await User.findOne({ email }).select("+password +refreshToken");
   if (!user || !(await user.comparePassword(password))) {
     throw new ApiError(401, "Invalid email or password");
@@ -65,6 +67,27 @@ export const login = asyncHandler(async (req, res) => {
       )
     );
 });
+
+
+export const forgetPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(404, "User not found!");
+  }
+
+  // Here you would typically send an email with a password reset link
+  // For now, we'll just return a success message
+  res.status(200).json(new ApiResponse(200, {}, "Password reset instructions sent to your email"));
+});
+
+export const resetPassword = async (req, res) => {
+    res.json({
+        success: true,
+        message: "Reset password endpoint"
+    });
+};
 
 export const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingToken = req.cookies?.refreshToken || req.body.refreshToken;
