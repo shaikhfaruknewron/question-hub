@@ -126,3 +126,18 @@ export async function resendVerification(email) {
   const response = await api.post("/auth/resend-verification", { email });
   return response.data;
 }
+
+export const getUsers = async () => {
+  const response = await api.get("/users");
+  return response.data;
+};
+
+export const updateUser = async (id, data) => {
+  const response = await api.patch(`/users/${id}`, data);
+  return response.data;
+};
+
+export const deactivateUser = async (id) => {
+  const response = await api.patch(`/users/${id}/deactivate`);
+  return response.data;
+};

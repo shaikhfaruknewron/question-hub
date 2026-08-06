@@ -13,9 +13,9 @@ import Test from "./models/Test.model.js";
 const DEMO_PASSWORD = "Password123";
 
 const USERS = [
-  { name: "Ada Admin", email: "admin@questionhub.dev", role: "admin" },
-  { name: "Tina Teacher", email: "teacher@questionhub.dev", role: "teacher" },
-  { name: "Sam Student", email: "student@questionhub.dev", role: "student" },
+  { name: "Ada Admin", email: "admin@questionhub.dev", role: "admin", isEmailVerified: true },
+  { name: "Tina Teacher", email: "teacher@questionhub.dev", role: "teacher", isEmailVerified: true },
+  { name: "Sam Student", email: "student@questionhub.dev", role: "student", isEmailVerified: false },
 ];
 
 const upsertUser = async ({ name, email, role }) => {
@@ -38,7 +38,7 @@ const seed = async () => {
   const [admin, teacher, student] = await Promise.all(USERS.map(upsertUser));
 
   const javascript = await upsertCategory("JavaScript", "Core language questions", teacher._id);
-  const databases = await upsertCategory("Databases", "SQL and NoSQL fundamentals", teacher._id);
+  
 
   const questionSeeds = [
     {

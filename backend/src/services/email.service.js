@@ -61,3 +61,27 @@ export const sendVerificationEmail = async ({ to, name, verificationLink }) => {
 
   return transporter.sendMail(mailOptions);
 };
+
+export const sendAccountDeactivatedEmail = async ({ to, name }) => {
+  const templatePath = path.join(
+    __dirname,
+    "../templates/emails/accountDeactivated.html"
+  );
+
+  let html = fs.readFileSync(templatePath, "utf-8");
+
+  html = html
+    .replace(/{{name}}/g, name || "User")
+    .replace(/{{year}}/g, new Date().getFullYear().toString());
+
+  const transporter = createTransporter();
+
+  const mailOptions = {
+    from: ENV.EMAIL_FROM || ENV.SMTP_USER,
+    to,
+    subject: "Your Question Hub Account Has Been Deactivated",
+    html,
+  };
+
+  return transporter.sendMail(mailOptions);
+};

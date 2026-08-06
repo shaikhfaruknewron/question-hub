@@ -1,13 +1,30 @@
 import { Router } from "express";
-import { getUsers, updateUserRole, deactivateUser } from "../controllers/user.controller.js";
+import { getUsers, updateUser, deactivateUser } from "../controllers/user.controller.js";
 import { verifyJWT, authorizeRoles } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.use(verifyJWT, authorizeRoles("admin"));
+router.use(verifyJWT, authorizeRoles("admin", "teacher"));
 
-router.get("/", getUsers);
-router.patch("/:id/role", updateUserRole);
-router.patch("/:id/deactivate", deactivateUser);
+router.get(
+  "/",
+  verifyJWT,
+  authorizeRoles("admin", "teacher"),
+  getUsers
+);
+// Update user details (Admin & Teacher)
+router.patch(
+  "/:id",
+  verifyJWT,
+  authorizeRoles("admin", "teacher"),
+  updateUser
+);
+// Deactivate user (Admin & Teacher)
+router.patch(
+  "/:id/deactivate",
+  verifyJWT,
+  authorizeRoles("admin", "teacher"),
+  deactivateUser
+);
 
 export default router;

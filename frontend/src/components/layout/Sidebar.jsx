@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FileQuestion, ClipboardList, BarChart3, Tags } from "lucide-react";
+import { LayoutDashboard, FileQuestion, ClipboardList, BarChart3, Tags , UserRoundPen} from "lucide-react";
 import useAuth from "@/src/hooks/useAuth";
 
 const NAV_ITEMS = [
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/categories", label: "Categories", icon: Tags, staffOnly: true },
   { href: "/dashboard/tests", label: "Tests", icon: ClipboardList },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, staffOnly: true },
+  { href: "/dashboard/users", label: "Users", icon: UserRoundPen, staffOnly: true },
 ];
 
 const Sidebar = () => {
