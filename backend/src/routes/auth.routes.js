@@ -9,6 +9,7 @@ import {
   resetPassword,
   verifyEmail,
   resendVerificationEmail,
+  setupPassword,
 } from "../controllers/auth.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import validate from "../middlewares/validate.middleware.js";
@@ -31,6 +32,7 @@ router.post("/refresh-token", refreshAccessToken);
 router.post("/logout", verifyJWT, logout);
 router.post("/forget-password", validate(forgetPasswordSchema), forgetPassword);
 router.post("/reset-password", validate(resetPasswordSchema), resetPassword);
+router.post("/setup-password", setupPassword);
 
 router.get("/me", verifyJWT, getCurrentUser);
 

@@ -127,8 +127,11 @@ export async function resendVerification(email) {
   return response.data;
 }
 
-export const getUsers = async () => {
-  const response = await api.get("/users");
+export const getUsers = async (currentPage = 1) => {
+  const response = await api.get(
+    `/users?page=${currentPage}&limit=10`
+  );
+
   return response.data;
 };
 
@@ -139,5 +142,163 @@ export const updateUser = async (id, data) => {
 
 export const deactivateUser = async (id) => {
   const response = await api.patch(`/users/${id}/deactivate`);
+  return response.data;
+};
+
+export const addUser = async (userData) => {
+  const response = await api.post("/users", userData);
+  return response.data;
+};
+
+export const getClasses = async () => {
+  const response = await api.get("/classes");
+  return response.data;
+};
+
+export const createClass = async (classData) => {
+  const response = await api.post("/classes", classData);
+
+  return response.data;
+};
+
+export const updateClass = async (id, classData) => {
+  const response = await api.patch(`/classes/${id}`, classData);
+
+  return response.data;
+};
+
+export const deactivateClass = async (id) => {
+  const response = await api.patch(`/classes/${id}/deactivate`);
+
+  return response.data;
+};
+
+export const getClassById = async (id) => {
+  const response = await api.get(`/classes/${id}`);
+
+  return response.data;
+};
+
+export const getSubjects = async () => {
+  const response = await api.get("/subjects");
+
+  console.log("SUBJECTS RESPONSE:", response.data);
+
+  return response.data;
+};
+
+export const createSubject = async (subjectData) => {
+  const response = await api.post(
+    "/subjects",
+    subjectData
+  );
+
+  return response.data;
+};
+
+export const updateSubject = async (id, subjectData) => {
+  const response = await api.patch(
+    `/subjects/${id}`,
+    subjectData
+  );
+
+  return response.data;
+};
+
+export const deactivateSubject = async (id) => {
+  const response = await api.patch(
+    `/subjects/${id}/deactivate`
+  );
+
+  return response.data;
+};
+
+export const getClassSubjects = async (classId) => {
+  const response = await api.get(
+    `/class-subjects/class/${classId}`
+  );
+
+  console.log(
+    "CLASS SUBJECTS RESPONSE:",
+    response.data
+  );
+
+  return response.data;
+};
+
+
+export const assignSubjectToClass = async (
+  classId,
+  subjectId
+) => {
+  const response = await api.post(
+    "/class-subjects",
+    {
+      classId,
+      subjectId,
+    }
+  );
+
+  return response.data;
+};
+
+
+export const removeSubjectFromClass = async (
+  classId,
+  subjectId
+) => {
+  const response = await api.delete(
+    `/class-subjects/${classId}/${subjectId}`
+  );
+
+  return response.data;
+};
+
+export const getClassSubjectTeachers = async (classId) => {
+  const response = await api.get(
+    `/class-subject-teachers/class/${classId}`
+  );
+
+  return response.data;
+};
+
+export const assignTeacherToClassSubject = async (
+  classId,
+  subjectId,
+  teacherId
+) => {
+  const response = await api.post(
+    "/class-subject-teachers",
+    {
+      classId,
+      subjectId,
+      teacherId,
+    }
+  );
+
+  return response.data;
+};
+
+export const updateClassSubjectTeacher = async (
+  assignmentId,
+  teacherId
+) => {
+  const response = await api.patch(
+    `/class-subject-teachers/${assignmentId}`,
+    {
+      teacherId,
+    }
+  );
+
+  return response.data;
+};
+
+export const removeClassSubjectTeacher = async (
+  assignmentId
+) => {
+  const response = await api.delete(
+    `/class-subject-teachers/${assignmentId}`
+  );
+
   return response.data;
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import {getUsers , deactivateUser , updateUser} from "@/src/utils/api";
+import {getUsers , deactivateUser , updateUser,addUser} from "@/src/utils/api";
 import { useAuthContext } from '@/src/context/AuthContext';
 import { Pencil, Trash2 } from "lucide-react";
 import React from 'react';
@@ -12,6 +12,24 @@ const Users = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
+     const [currentPage, setCurrentPage] = useState(1);
+     const [totalPages, setTotalPages] = useState(1);
+     const [totalUsers, setTotalUsers] = useState(0);
+
+     const USERS_PER_PAGE = 10;
+
+
+    const [showAddUser, setShowAddUser] = useState(false);
+
+    const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    role: "student",
+    });
+
+    const [addingUser, setAddingUser] = useState(false);
+    const [addUserError, setAddUserError] = useState("");
     
     const [editingUser, setEditingUser] = useState(null);
 
@@ -22,20 +40,33 @@ const Users = () => {
       });
 
     useEffect(() => {
-     fetchUsers();
-       }, []);
+     fetchUsers(currentPage);
+    }, [currentPage]);
 
-    const fetchUsers = async () => {
-     try {
-    const data = await getUsers();
-    console.log(data);
-    setUsers(data);
+    const fetchUsers = async (currentPageNumber) => {
+    try {
+    setLoading(true);
+    setError("");
+
+    const data = await getUsers(currentPageNumber);
+
+    console.log("CURRENT PAGE:", currentPageNumber);
+    console.log("USERS:", data.users);
+
+    setUsers(data.users);
+    setTotalPages(data.pagination.totalPages);
+    setTotalUsers(data.pagination.totalUsers);
+
     } catch (err) {
-    setError(err.message);
-    } finally {
+    setError(
+      err.response?.data?.message ||
+      err.message ||
+      "Failed to fetch users"
+    );
+   } finally {
     setLoading(false);
-    }
-   }; 
+   }
+   };
      
     const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
@@ -48,7 +79,7 @@ const Users = () => {
     await deactivateUser(id);
 
     // Refresh the table
-    fetchUsers();
+    fetchUsers(currentPage);
 
   } catch (err) {
     alert(err.message);
@@ -71,7 +102,7 @@ const Users = () => {
 
     setEditingUser(null);
 
-    fetchUsers();
+    fetchUsers(currentPage);
 
   } catch (err) {
     alert(err.message);
@@ -87,12 +118,193 @@ const Users = () => {
   return <p>{error}</p>;
    }
 
+   const handleAddUser = async (e) => {
+   e.preventDefault();
+
+  setAddUserError("");
+
+  if (!newUser.name || !newUser.email || !newUser.role) {
+    setAddUserError("Please fill all fields.");
+    return;
+  }
+
+  try {
+    setAddingUser(true);
+
+    await addUser(newUser);
+
+    // Refresh users list
+   const data = await getUsers(currentPage, USERS_PER_PAGE);
+
+setUsers(data.users);
+setTotalPages(data.pagination.totalPages);
+setTotalUsers(data.pagination.totalUsers);
+
+    // Reset form
+    setNewUser({
+      name: "",
+      email: "",
+      role: "student",
+    });
+
+    setShowAddUser(false);
+
+  } catch (err) {
+    setAddUserError(
+      err.response?.data?.message ||
+      err.message ||
+      "Failed to create user"
+    );
+  } finally {
+    setAddingUser(false);
+  }
+};
+
 
   return (
-  <div className="overflow-x-auto">
-    <h1 className="text-2xl font-bold mb-6">
-      Users
-    </h1>
+  <div className="p-6 bg-gray-50 min-h-screen">
+   <div className="flex items-center justify-between mb-6">
+  <h1 className="text-2xl font-bold">
+    Users
+  </h1>
+
+  {(user?.role === "admin" || user?.role === "teacher") && (
+    <button
+      onClick={() => setShowAddUser(true)}
+      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+    >
+      + Add User
+    </button>
+  )}
+</div>
+
+    {showAddUser && (
+  <div className="mb-6 rounded-xl border bg-white p-6 shadow-sm">
+
+    <div className="flex items-center justify-between mb-5">
+      <h2 className="text-lg font-semibold">
+        Add User
+      </h2>
+
+      <button
+        type="button"
+        onClick={() => setShowAddUser(false)}
+        className="text-gray-500 hover:text-gray-700"
+      >
+        ✕
+      </button>
+    </div>
+
+    {addUserError && (
+      <div className="mb-4 rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700">
+        {addUserError}
+      </div>
+    )}
+
+    <form onSubmit={handleAddUser}>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        {/* Name */}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Name
+          </label>
+
+          <input
+            type="text"
+            value={newUser.name}
+            onChange={(e) =>
+              setNewUser({
+                ...newUser,
+                name: e.target.value,
+              })
+            }
+            placeholder="Enter name"
+            className="w-full rounded-lg border px-4 py-2"
+          />
+        </div>
+
+        {/* Email */}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Email
+          </label>
+
+          <input
+            type="email"
+            value={newUser.email}
+            onChange={(e) =>
+              setNewUser({
+                ...newUser,
+                email: e.target.value,
+              })
+            }
+            placeholder="Enter email"
+            className="w-full rounded-lg border px-4 py-2"
+          />
+        </div>
+
+        {/* Role */}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Role
+          </label>
+
+          {user?.role === "admin" ? (
+            <select
+              value={newUser.role}
+              onChange={(e) =>
+                setNewUser({
+                  ...newUser,
+                  role: e.target.value,
+                })
+              }
+              className="w-full rounded-lg border px-4 py-2"
+            >
+              <option value="student">
+                Student
+              </option>
+
+              <option value="teacher">
+                Teacher
+              </option>
+            </select>
+          ) : (
+            <input
+              type="text"
+              value="Student"
+              disabled
+              className="w-full rounded-lg border bg-gray-100 px-4 py-2"
+            />
+          )}
+        </div>
+
+      </div>
+
+      <div className="mt-5 flex justify-end gap-3">
+
+        <button
+          type="button"
+          onClick={() => setShowAddUser(false)}
+          className="rounded-lg border px-4 py-2 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          disabled={addingUser}
+          className="rounded-lg bg-blue-600 px-5 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {addingUser ? "Creating..." : "Create User"}
+        </button>
+
+      </div>
+
+    </form>
+  </div>
+)}
 
     {editingUser && (
   <div className="mb-6 border rounded p-4">
@@ -166,15 +378,19 @@ const Users = () => {
       </tr>
     </thead>
 
-    <tbody>
+   <tbody>
   {users.map((targetUser) => (
     <tr
       key={targetUser._id}
       className="border-t hover:bg-gray-50 transition"
     >
-      <td className="px-6 py-4">{targetUser.name}</td>
+      <td className="px-6 py-4">
+        {targetUser.name}
+      </td>
 
-      <td className="px-6 py-4">{targetUser.email}</td>
+      <td className="px-6 py-4">
+        {targetUser.email}
+      </td>
 
       <td className="px-6 py-4 capitalize">
         {targetUser.role}
@@ -188,7 +404,6 @@ const Users = () => {
         {(
           (user?.role === "admin" &&
             user._id !== targetUser._id) ||
-
           (user?.role === "teacher" &&
             targetUser.role === "student")
         ) && (
@@ -217,6 +432,49 @@ const Users = () => {
   ))}
 </tbody>
   </table>
+  <div className="flex items-center justify-between mt-6">
+
+  <p className="text-sm text-gray-600">
+    Page {currentPage} of {totalPages} • {totalUsers} users
+  </p>
+
+  <div className="flex gap-2">
+
+    <button
+      onClick={() => setCurrentPage((prev) => prev - 1)}
+      disabled={currentPage === 1}
+      className="px-4 py-2 border rounded-lg disabled:opacity-50"
+    >
+      Previous
+    </button>
+
+    {Array.from(
+      { length: totalPages },
+      (_, index) => index + 1
+    ).map((pageNumber) => (
+      <button
+        key={pageNumber}
+        onClick={() => setCurrentPage(pageNumber)}
+        className={`px-3 py-2 rounded-lg ${
+          currentPage === pageNumber
+            ? "bg-blue-600 text-white"
+            : "border"
+        }`}
+      >
+        {pageNumber}
+      </button>
+    ))}
+
+    <button
+      onClick={() => setCurrentPage((prev) => prev + 1)}
+      disabled={currentPage === totalPages}
+      className="px-4 py-2 border rounded-lg disabled:opacity-50"
+    >
+      Next
+    </button>
+
+  </div>
+</div>
 </div>
 );
 }

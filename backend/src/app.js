@@ -3,6 +3,10 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { ENV } from "./config/env.js";
 import apiRoutes from "./routes/index.js";
+import classRouter from "./routes/class.routes.js";
+import subjectRouter from "./routes/subject.routes.js";
+import classSubjectRouter from "./routes/classSubject.routes.js";
+import classSubjectTeacherRouter from "./routes/classSubjectTeacher.routes.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
 const app = express();
@@ -37,8 +41,13 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/v1", apiRoutes);
+app.use("/api/v1/classes", classRouter);
+app.use("/api/v1/subjects", subjectRouter);
+app.use( "/api/v1/class-subjects",classSubjectRouter);
+app.use( "/api/v1/class-subject-teachers",classSubjectTeacherRouter);
 
 app.use(notFound);
 app.use(errorHandler);
+
 
 export default app;

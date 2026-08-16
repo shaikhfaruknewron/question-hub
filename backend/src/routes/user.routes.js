@@ -1,10 +1,9 @@
 import { Router } from "express";
-import { getUsers, updateUser, deactivateUser } from "../controllers/user.controller.js";
+import { getUsers, updateUser, deactivateUser,addUser } from "../controllers/user.controller.js";
 import { verifyJWT, authorizeRoles } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.use(verifyJWT, authorizeRoles("admin", "teacher"));
 
 router.get(
   "/",
@@ -25,6 +24,13 @@ router.patch(
   verifyJWT,
   authorizeRoles("admin", "teacher"),
   deactivateUser
+);
+
+router.post(
+  "/",
+  verifyJWT,
+  authorizeRoles("admin", "teacher"),
+  addUser
 );
 
 export default router;

@@ -85,3 +85,37 @@ export const sendAccountDeactivatedEmail = async ({ to, name }) => {
 
   return transporter.sendMail(mailOptions);
 };
+
+export const sendSetupPasswordEmail = async ({
+  to,
+  name,
+  role,
+  setupLink,
+}) => {
+  const templatePath = path.join(
+    __dirname,
+    "../templates/emails/setupPassword.html"
+  );
+
+  let html = fs.readFileSync(templatePath, "utf-8");
+
+  html = html
+    .replace(/{{name}}/g, name || "User")
+    .replace(/{{role}}/g, role || "student")
+    .replace(/{{setupLink}}/g, setupLink)
+    .replace(
+      /{{year}}/g,
+      new Date().getFullYear().toString()
+    );
+
+  const transporter = createTransporter();
+
+  const mailOptions = {
+    from: ENV.EMAIL_FROM || ENV.SMTP_USER,
+    to,
+    subject: "Welcome to Question Hub - Set Your Password",
+    html,
+  };
+
+  return transporter.sendMail(mailOptions);
+};

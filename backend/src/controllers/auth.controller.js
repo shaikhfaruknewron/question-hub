@@ -5,6 +5,7 @@ import User from "../models/User.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateTokens.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import { ENV } from "../config/env.js";
 import { sendForgotPasswordEmail, sendVerificationEmail } from "../services/email.service.js";
 
@@ -238,4 +239,59 @@ export const logout = asyncHandler(async (req, res) => {
 
 export const getCurrentUser = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, req.user, "Current user fetched"));
+});
+
+export const setupPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+ 
+  if (!token || !newPassword) {
+    throw new ApiError(
+      400,
+      "Token and new password are required"
+    );
+  }
+
+  
+  const user = await User.findOne({
+    passwordSetupToken: token,
+    passwordSetupExpires: { $gt: new Date() },
+  });
+
+  if (!user) {
+    throw new ApiError(
+      400,
+      "Invalid or expired password setup link"
+    );
+  }
+
+  
+  if (newPassword.length < 6) {
+    throw new ApiError(
+      400,
+      "Password must be at least 6 characters long"
+    );
+  }
+
+  const hashedPassword = await bcrypt.hash(
+    newPassword,
+    10
+  );
+
+  user.password = hashedPassword;
+
+  user.isEmailVerified = true;
+  
+  user.passwordSetupToken = null;
+  user.passwordSetupExpires = null;
+
+  await user.save();
+
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {},
+      "Password created successfully"
+    )
+  );
 });

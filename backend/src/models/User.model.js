@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, select: false },
     role: { type: String, enum: ["admin", "teacher", "student"], default: "student" },
+    class: {type: mongoose.Schema.Types.ObjectId,ref: "Class",default: null},
     avatar: { type: String, default: "" },
     isActive: { type: Boolean, default: true },
     isEmailVerified: { type: Boolean, default: false },
@@ -15,6 +16,9 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: { type: Date, select: false },
     emailVerificationToken: { type: String, select: false },
     emailVerificationExpires: { type: Date, select: false },
+    passwordSetupToken: { type: String, default: null },
+    passwordSetupExpires: { type: Date, default: null },
+    
   },
   { timestamps: true }
 );
