@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {getUsers , deactivateUser , updateUser,addUser} from "@/src/utils/api";
 import { useAuthContext } from '@/src/context/AuthContext';
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2,Search } from "lucide-react";
 import React from 'react';
 
 const Users = () => {
@@ -18,6 +18,7 @@ const Users = () => {
      const [totalUsers, setTotalUsers] = useState(0);
 
      const [roleFilter, setRoleFilter] = useState("all");
+     const [search,setSearch]=useState("");
 
      const USERS_PER_PAGE = 10;
 
@@ -43,17 +44,18 @@ const Users = () => {
 
     useEffect(() => {
      fetchUsers(currentPage);
-    }, [currentPage,roleFilter]);
+    }, [currentPage,roleFilter,search]);
 
     const fetchUsers = async (currentPageNumber) => {
     try {
     setLoading(true);
     setError("");
 
-    const data = await getUsers(currentPageNumber,roleFilter);
+    const data = await getUsers(currentPageNumber,roleFilter,search);
 
     console.log("CURRENT PAGE:", currentPageNumber);
     console.log("ROLE FILTER:", roleFilter);
+    console.log("SEARCH:", search);
     console.log("USERS:", data.users);
 
     setUsers(data.users);
@@ -170,7 +172,7 @@ setTotalUsers(data.pagination.totalUsers);
   <h1 className="text-2xl font-bold">
     Users
   </h1>
-  
+
   <div className="flex items-center gap-3">
     {/* Role Filter */}
     <select
@@ -186,6 +188,27 @@ setTotalUsers(data.pagination.totalUsers);
       <option value="teacher">Teachers</option>
       <option value="admin">Admins</option>
     </select>
+
+
+     <div className="relative w-64">
+  <Search
+    size={18}
+    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+  />
+
+  <input
+    type="text"
+    placeholder="Search users..."
+    value={search}
+    onChange={(e) => {
+      setSearch(e.target.value);
+      setCurrentPage(1);
+    }}
+    className="border border-gray-300 rounded-lg pl-10 pr-3 py-2
+               text-sm w-full focus:outline-none
+               focus:ring-2 focus:ring-blue-500"
+  />
+</div>
 
   {(user?.role === "admin" || user?.role === "teacher") && (
     <button

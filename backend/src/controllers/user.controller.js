@@ -10,7 +10,7 @@ import bcrypt from "bcryptjs";
 
 
 export const getUsers = asyncHandler(async (req, res) => {
-  const { role } = req.query;
+  const { role,search } = req.query;
 
   // Get page number from query
   const currentPage = Math.max(
@@ -24,7 +24,18 @@ export const getUsers = asyncHandler(async (req, res) => {
   // Calculate how many users to skip
   const skip = (currentPage - 1) * limit;
 
-  const filter = role && role !== "all" ? { role } : {};
+  const filter = {};
+
+if (role && role !== "all") {
+  filter.role = role;
+}
+
+if (search) {
+  filter.$or = [
+    { name: { $regex: search, $options: "i" } },
+    { email: { $regex: search, $options: "i" } },
+  ];
+}
 
   const [users, totalUsers] = await Promise.all([
     User.find(filter)

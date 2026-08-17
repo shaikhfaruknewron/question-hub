@@ -127,9 +127,9 @@ export async function resendVerification(email) {
   return response.data;
 }
 
-export const getUsers = async (currentPage = 1 ,role="all") => {
+export const getUsers = async (currentPage = 1 ,role="all" , search="") => {
   const response = await api.get(
-    `/users?page=${currentPage}&limit=10&role=${role}`
+    `/users?page=${currentPage}&limit=10&role=${role}&search=${encodeURIComponent(search)}`
   );
 
   return response.data;
