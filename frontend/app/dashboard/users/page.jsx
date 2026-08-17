@@ -17,6 +17,8 @@ const Users = () => {
      const [totalPages, setTotalPages] = useState(1);
      const [totalUsers, setTotalUsers] = useState(0);
 
+     const [roleFilter, setRoleFilter] = useState("all");
+
      const USERS_PER_PAGE = 10;
 
 
@@ -41,16 +43,17 @@ const Users = () => {
 
     useEffect(() => {
      fetchUsers(currentPage);
-    }, [currentPage]);
+    }, [currentPage,roleFilter]);
 
     const fetchUsers = async (currentPageNumber) => {
     try {
     setLoading(true);
     setError("");
 
-    const data = await getUsers(currentPageNumber);
+    const data = await getUsers(currentPageNumber,roleFilter);
 
     console.log("CURRENT PAGE:", currentPageNumber);
+    console.log("ROLE FILTER:", roleFilter);
     console.log("USERS:", data.users);
 
     setUsers(data.users);
@@ -167,6 +170,22 @@ setTotalUsers(data.pagination.totalUsers);
   <h1 className="text-2xl font-bold">
     Users
   </h1>
+  
+  <div className="flex items-center gap-3">
+    {/* Role Filter */}
+    <select
+      value={roleFilter}
+      onChange={(e) => {
+        setRoleFilter(e.target.value);
+        setCurrentPage(1);
+      }}
+      className="border border-gray-300 rounded-lg px-3 py-2 bg-white text-sm"
+    >
+      <option value="all">All Users</option>
+      <option value="student">Students</option>
+      <option value="teacher">Teachers</option>
+      <option value="admin">Admins</option>
+    </select>
 
   {(user?.role === "admin" || user?.role === "teacher") && (
     <button
@@ -176,6 +195,7 @@ setTotalUsers(data.pagination.totalUsers);
       + Add User
     </button>
   )}
+</div>
 </div>
 
     {showAddUser && (

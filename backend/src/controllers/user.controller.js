@@ -24,7 +24,7 @@ export const getUsers = asyncHandler(async (req, res) => {
   // Calculate how many users to skip
   const skip = (currentPage - 1) * limit;
 
-  const filter = role ? { role } : {};
+  const filter = role && role !== "all" ? { role } : {};
 
   const [users, totalUsers] = await Promise.all([
     User.find(filter)
