@@ -48,10 +48,9 @@ const Users = () => {
     }, [currentPage,roleFilter,debouncedSearch]);
 
     useEffect(() => {
-  const timer = setTimeout(() => {
+   const timer = setTimeout(() => {
     setDebouncedSearch(search);
-  }, 700);
-
+  }, 1000)
   return () => clearTimeout(timer);
 }, [search]);
 
