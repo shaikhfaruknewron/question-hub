@@ -18,7 +18,8 @@ const Users = () => {
      const [totalUsers, setTotalUsers] = useState(0);
 
      const [roleFilter, setRoleFilter] = useState("all");
-     const [search,setSearch]=useState("");
+     const [search, setSearch] = useState("");
+     const [debouncedSearch, setDebouncedSearch] = useState("");
 
      const USERS_PER_PAGE = 10;
 
@@ -44,14 +45,22 @@ const Users = () => {
 
     useEffect(() => {
      fetchUsers(currentPage);
-    }, [currentPage,roleFilter,search]);
+    }, [currentPage,roleFilter,debouncedSearch]);
+
+    useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(search);
+  }, 700);
+
+  return () => clearTimeout(timer);
+}, [search]);
 
     const fetchUsers = async (currentPageNumber) => {
     try {
     setLoading(true);
     setError("");
 
-    const data = await getUsers(currentPageNumber,roleFilter,search);
+    const data = await getUsers(currentPageNumber,roleFilter,debouncedSearch);
 
     console.log("CURRENT PAGE:", currentPageNumber);
     console.log("ROLE FILTER:", roleFilter);
