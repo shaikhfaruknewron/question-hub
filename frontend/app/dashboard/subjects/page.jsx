@@ -508,9 +508,7 @@ const [editError, setEditError] = useState("");
                 Status
               </th>
 
-              <th className="px-4 py-3 text-right text-sm font-semibold">
-                Actions
-              </th>
+  
 
             </tr>
           </thead>
