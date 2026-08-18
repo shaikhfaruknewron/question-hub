@@ -6,12 +6,13 @@ import { getClasses , createClass,updateClass,deactivateClass,
    getClassSubjects,assignSubjectToClass,removeSubjectFromClass,
    getSubjects,getClassSubjectTeachers,getUsers,assignTeacherToClassSubject,
    updateClassSubjectTeacher,removeClassSubjectTeacher,
-
 } from "@/src/utils/api";
 import { useRouter } from "next/navigation";
+import {useAuthContext} from "@/src/context/AuthContext";
 
 export default function ClassesPage() {
   const router = useRouter();
+  const {user} =useAuthContext();
   
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -491,6 +492,7 @@ const handleAssignSubject = async () => {
           Classes
         </h1>
 
+      {user?.role==="admin" && (
         <button
           onClick={() => {
           setShowAddForm(true);
@@ -500,6 +502,7 @@ const handleAssignSubject = async () => {
            >
           + Add Class
           </button>
+      )}
       </div>
 
       {loading && <p>Loading classes...</p>}
