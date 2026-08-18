@@ -787,7 +787,7 @@ const handleAssignSubject = async () => {
   </div>
 )}
 
-      {selectedClass && (
+      { user?.role==="admin" &&selectedClass && (
   <div className="mt-6 rounded-xl border bg-white p-6">
 
     <div className="mb-5 flex items-center justify-between">
@@ -1116,7 +1116,7 @@ const handleAssignSubject = async () => {
   </div>
 )}
 
-        {editingClass && (
+        { user?.role==="admin" && editingClass && (
   <div className="mb-6 rounded-xl border bg-white p-6">
     <h2 className="mb-4 text-lg font-semibold">
       Edit Class
