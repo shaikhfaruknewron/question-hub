@@ -9,7 +9,11 @@ import {
   deactivateSubject,
 } from "@/src/utils/api";
 
+import {useAuthContext} from "@/src/context/AuthContext";
+
 export default function SubjectsPage() {
+
+  const {user} = useAuthContext();
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -223,6 +227,7 @@ const [editError, setEditError] = useState("");
           </p>
         </div>
 
+{user?.role==="admin" && (
         <button
   onClick={() => {
     setShowAddForm(true);
@@ -238,9 +243,10 @@ const [editError, setEditError] = useState("");
 >
   + Add Subject
 </button>
+)}
       </div>
 
-      {showAddForm && (
+      {user?.role==="admin" && showAddForm && (
   <div className="mb-6 rounded-xl border bg-white p-6">
 
     <h2 className="mb-4 text-lg font-semibold">
@@ -364,7 +370,7 @@ const [editError, setEditError] = useState("");
   </div>
 )}
 
-    {editingSubject && (
+    {user?.role==="admin" && editingSubject && (
   <div className="mb-6 rounded-xl border bg-white p-6">
 
     <h2 className="mb-4 text-lg font-semibold">
@@ -549,6 +555,10 @@ const [editError, setEditError] = useState("");
                   </td>
 
                   <td className="px-4 py-3 text-right">
+                    {user?.role==="admin" && (
+                      <>
+
+                    
                     <button
   onClick={() => handleEditClick(subject)}
   className="
@@ -584,6 +594,7 @@ const [editError, setEditError] = useState("");
     ? "Deactivate"
     : "Deactivated"}
 </button>
+</>  )}
                   </td>
 
                 </tr>
