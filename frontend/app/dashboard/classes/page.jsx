@@ -638,6 +638,8 @@ const handleAssignSubject = async () => {
 >
   View
 </button>
+{user?.role==="admin" && (
+  <>
                      <button
   onClick={() => handleEditClick(classItem)}
   className="
@@ -682,6 +684,8 @@ const handleAssignSubject = async () => {
 >
   {classItem.isActive ? "Deactivate" : "Deactivated"}
 </button>
+</>
+)}
 
         
                   </td>
@@ -692,7 +696,7 @@ const handleAssignSubject = async () => {
         </div>
       )}
 
-      {showAddSubject && (
+      {user?.role==="admin" && showAddSubject && (
   <div className="mb-5 rounded-lg border bg-gray-50 p-4">
 
     <h3 className="mb-3 font-medium">
