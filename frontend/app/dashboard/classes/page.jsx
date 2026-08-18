@@ -37,7 +37,6 @@ const [removingSubjectId, setRemovingSubjectId] = useState(null);
   const [teacherAssignments, setTeacherAssignments] = useState([]);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
 
-
   const [teachers, setTeachers] = useState([]);
 
 const [showTeacherModal, setShowTeacherModal] = useState(false);

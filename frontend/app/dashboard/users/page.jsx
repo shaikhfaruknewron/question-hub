@@ -489,7 +489,8 @@ setTotalUsers(data.pagination.totalUsers);
     Page {currentPage} of {totalPages} • {totalUsers} users
   </p>
 
-  <div className="flex gap-2">
+  {totalPages > 1 && (
+  <div className="flex justify-center items-center gap-2 mt-6">
 
     <button
       onClick={() => setCurrentPage((prev) => prev - 1)}
@@ -525,6 +526,7 @@ setTotalUsers(data.pagination.totalUsers);
     </button>
 
   </div>
+  )}
 </div>
 </div>
 );
