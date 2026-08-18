@@ -144,13 +144,11 @@ const loadSubjects = async () => {
 
  const loadTeachers = async () => {
   try {
-    const response = await getUsers(1, 100);
+    const response = await getUsers(1, "teacher");
 
-    const teacherUsers = response.users.filter(
-      (user) => user.role === "teacher"
-    );
+    console.log("TEACHERS:", response.users);
 
-    setTeachers(teacherUsers);
+    setTeachers(response.users || []);
   } catch (error) {
     console.error(
       "Failed to fetch teachers:",
@@ -158,7 +156,6 @@ const loadSubjects = async () => {
     );
   }
 };
-
  const handleManageSubjects = async (classItem) => {
   try {
     setSelectedClass(classItem);

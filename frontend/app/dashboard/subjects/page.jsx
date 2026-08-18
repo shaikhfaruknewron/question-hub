@@ -507,15 +507,9 @@ const [editError, setEditError] = useState("");
               <th className="px-4 py-3 text-left text-sm font-semibold">
                 Status
               </th>
-
-  
-
             </tr>
           </thead>
-
-
           <tbody>
-
             {subjects.length === 0 ? (
               <tr>
                 <td
