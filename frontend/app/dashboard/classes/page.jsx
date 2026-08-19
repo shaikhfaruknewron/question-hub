@@ -58,6 +58,8 @@ const [classStudents, setClassStudents] = useState([]);
 const [allStudents, setAllStudents] = useState([]);
 const [studentSearch, setStudentSearch] = useState("");
 
+const [openActionMenu, setOpenActionMenu] = useState(null);
+
  const [removingTeacherId, setRemovingTeacherId] =
   useState(null);
 
@@ -703,90 +705,143 @@ const handleAssignSubject = async () => {
                     {classItem.isActive ? "Active" : "Inactive"}
                   </td>
 
-                  <td className="px-4 py-3">
+                 <td className="relative px-4 py-3 text-right">
+  {/* Three-dot button */}
+  <button
+    onClick={() =>
+      setOpenActionMenu(
+        openActionMenu === classItem._id
+          ? null
+          : classItem._id
+      )
+    }
+    className="
+      rounded-lg p-2
+      text-gray-500
+      transition-all duration-200
+      hover:bg-gray-100
+      hover:text-gray-800
+      active:scale-95
+    "
+    aria-label="Open actions"
+  >
+    ⋮
+  </button>
 
-                    <button
-  onClick={() => router.push(`/dashboard/classes/${classItem._id}`)}
-  className="
-    rounded-lg px-3 py-1.5 text-sm font-medium
-    text-green-600
-    transition-all duration-200
-    hover:bg-green-50
-    hover:text-green-700
-    active:scale-95
-  "
->
-  View
-</button>
-{user?.role==="admin" && (
-  <>
-                     <button
-  onClick={() => handleEditClick(classItem)}
-  className="
-    rounded-lg px-3 py-1.5 text-sm font-medium
-    text-blue-500
-    transition-all duration-200
-    hover:bg-blue-50
-    hover:text-blue-600
-    active:scale-95
-  "
->
-  Edit
-</button>
+  {/* Dropdown */}
+  {openActionMenu === classItem._id && (
+    <div
+      className="
+        absolute right-4 top-12 z-50
+        w-52 overflow-hidden
+        rounded-xl border border-gray-200
+        bg-white py-1 shadow-lg
+      "
+    >
+      {/* View - Everyone */}
+      <button
+        onClick={() => {
+          router.push(`/dashboard/classes/${classItem._id}`);
+          setOpenActionMenu(null);
+        }}
+        className="
+          flex w-full items-center gap-2
+          px-4 py-2.5 text-left text-sm
+          text-green-600
+          transition hover:bg-green-50
+        "
+      >
+        <span>👁</span>
+        View
+      </button>
 
-<button
-  onClick={() => handleManageSubjects(classItem)}
-  className="
-    ml-2 rounded-lg px-3 py-1.5
-    text-sm font-medium
-    text-blue-600
-    transition-all duration-200
-    hover:bg-blue-50
-    active:scale-95
-  "
->
-  Manage Subjects
-</button>
-</>
-)}
-{(user?.role==="admin" || user?.role==="teacher") && (
-<button
-  onClick={() => handleManageStudents(classItem)}
-  className="
-    ml-2 rounded-lg px-3 py-1.5
-    text-sm font-medium
-    text-blue-600
-    transition-all duration-200
-    hover:bg-blue-50
-    active:scale-95
-  "
->
-  Manage Students
-</button>
-)}
-{user?.role==="admin" && (
-<button
-  onClick={() => handleDeactivateClass(classItem)}
-  disabled={!classItem.isActive}
-  className="
-    rounded-lg px-3 py-1.5 text-sm font-medium
-    text-red-500
-    transition-all duration-200
-    hover:bg-red-50
-    hover:text-red-600
-    active:scale-95
-    disabled:cursor-not-allowed
-    disabled:text-gray-400
-    disabled:hover:bg-transparent
-  "
->
-  {classItem.isActive ? "Deactivate" : "Deactivated"}
-</button>
+      {/* Admin actions */}
+      {user?.role === "admin" && (
+        <>
+          <button
+            onClick={() => {
+              handleEditClick(classItem);
+              setOpenActionMenu(null);
+            }}
+            className="
+              flex w-full items-center gap-2
+              px-4 py-2.5 text-left text-sm
+              text-blue-600
+              transition hover:bg-blue-50
+            "
+          >
+            <span>✏️</span>
+            Edit
+          </button>
 
-)}
+          <button
+            onClick={() => {
+              handleManageSubjects(classItem);
+              setOpenActionMenu(null);
+            }}
+            className="
+              flex w-full items-center gap-2
+              px-4 py-2.5 text-left text-sm
+              text-blue-600
+              transition hover:bg-blue-50
+            "
+          >
+            <span>📚</span>
+            Manage Subjects
+          </button>
+        </>
+      )}
 
-        
-                  </td>
+      {/* Admin + Teacher */}
+      {(user?.role === "admin" || user?.role === "teacher") && (
+        <button
+          onClick={() => {
+            handleManageStudents(classItem);
+            setOpenActionMenu(null);
+          }}
+          className="
+            flex w-full items-center gap-2
+            px-4 py-2.5 text-left text-sm
+            text-blue-600
+            transition hover:bg-blue-50
+          "
+        >
+          <span>👨‍🎓</span>
+          Manage Students
+        </button>
+      )}
+
+      {/* Admin - destructive action */}
+      {user?.role === "admin" && (
+        <>
+          <div className="my-1 border-t border-gray-200" />
+
+          <button
+            onClick={() => {
+              if (classItem.isActive) {
+                handleDeactivateClass(classItem);
+              }
+              setOpenActionMenu(null);
+            }}
+            disabled={!classItem.isActive}
+            className="
+              flex w-full items-center gap-2
+              px-4 py-2.5 text-left text-sm
+              text-red-600
+              transition hover:bg-red-50
+              disabled:cursor-not-allowed
+              disabled:text-gray-400
+              disabled:hover:bg-transparent
+            "
+          >
+            <span>🗑</span>
+            {classItem.isActive ? "Deactivate" : "Deactivated"}
+          </button>
+        </>
+      )}
+    </div>
+  )}
+</td>
                 </tr>
               ))}
             </tbody>
