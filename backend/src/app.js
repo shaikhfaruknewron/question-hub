@@ -7,6 +7,7 @@ import classRouter from "./routes/class.routes.js";
 import subjectRouter from "./routes/subject.routes.js";
 import classSubjectRouter from "./routes/classSubject.routes.js";
 import classSubjectTeacherRouter from "./routes/classSubjectTeacher.routes.js";
+import studentClassRouter from "./routes/studentClass.routes.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
 
 const app = express();
@@ -45,6 +46,7 @@ app.use("/api/v1/classes", classRouter);
 app.use("/api/v1/subjects", subjectRouter);
 app.use( "/api/v1/class-subjects",classSubjectRouter);
 app.use( "/api/v1/class-subject-teachers",classSubjectTeacherRouter);
+app.use("/api/v1/student-classes",studentClassRouter);
 
 app.use(notFound);
 app.use(errorHandler);

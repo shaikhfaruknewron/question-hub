@@ -302,3 +302,47 @@ export const removeClassSubjectTeacher = async (
 
   return response.data;
 };
+
+export const assignStudentToClass = async (
+  studentId,
+  classId
+) => {
+  const response = await api.post(
+    "/student-classes",
+    {
+      studentId,
+      classId,
+    }
+  );
+
+  return response.data;
+};
+
+export const getStudentsByClass = async (classId) => {
+  const response = await api.get(
+    `/student-classes/class/${classId}`
+  );
+
+  return response.data;
+};
+
+export const updateStudentClass = async (
+  studentId,
+  classId
+) => {
+  const response = await api.patch(
+    `/student-classes/${studentId}`,
+    {
+      classId,
+    }
+  );
+
+  return response.data;
+};
+export const removeStudentFromClass = async (studentId) => {
+  const response = await api.delete(
+    `/student-classes/${studentId}`
+  );
+
+  return response.data;
+};
