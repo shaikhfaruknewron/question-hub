@@ -39,6 +39,7 @@ if (search) {
 
   const [users, totalUsers] = await Promise.all([
     User.find(filter)
+      .populate("class", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit),

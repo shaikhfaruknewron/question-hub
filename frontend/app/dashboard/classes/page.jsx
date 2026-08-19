@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { getClasses , createClass,updateClass,deactivateClass,
    getClassSubjects,assignSubjectToClass,removeSubjectFromClass,
    getSubjects,getClassSubjectTeachers,getUsers,assignTeacherToClassSubject,
-   updateClassSubjectTeacher,removeClassSubjectTeacher,
+   updateClassSubjectTeacher,removeClassSubjectTeacher,assignStudentToClass,
+  getStudentsByClass,updateStudentClass,removeStudentFromClass,
 } from "@/src/utils/api";
 import { useRouter } from "next/navigation";
 import {useAuthContext} from "@/src/context/AuthContext";
@@ -49,6 +50,13 @@ const [selectedTeacherId, setSelectedTeacherId] = useState("");
 const [assigningTeacher, setAssigningTeacher] = useState(false);
 
 const [teacherError, setTeacherError] = useState("");
+
+ const [showStudentsModal, setShowStudentsModal] = useState(false);
+const [selectedClassForStudents, setSelectedClassForStudents] = useState(null);
+const [classStudents, setClassStudents] = useState([]);
+
+const [allStudents, setAllStudents] = useState([]);
+const [studentSearch, setStudentSearch] = useState("");
 
  const [removingTeacherId, setRemovingTeacherId] =
   useState(null);
@@ -194,6 +202,25 @@ const loadSubjects = async () => {
   }
 };
 
+const handleManageStudents = async (classItem) => {
+  try {
+    setSelectedClassForStudents(classItem);
+
+    const [classResponse, usersResponse] = await Promise.all([
+      getStudentsByClass(classItem._id),
+      getUsers(1, "student", ""),
+    ]);
+
+    setClassStudents(classResponse || []);
+
+    setAllStudents(usersResponse.users || []);
+
+    setShowStudentsModal(true);
+  } catch (error) {
+    console.error("Failed to fetch students:", error);
+  }
+};
+
 
 const handleAssignTeacher = async () => {
   if (!selectedTeacherId) {
@@ -258,6 +285,62 @@ const handleAssignTeacher = async () => {
 
   } finally {
     setAssigningTeacher(false);
+  }
+};
+
+const handleAssignStudent = async (studentId) => {
+  try {
+    await assignStudentToClass(
+      studentId,
+      selectedClassForStudents._id
+    );
+
+    // Get updated students assigned to this class
+    const response = await getStudentsByClass(
+      selectedClassForStudents._id
+    );
+
+    const updatedClassStudents = response || [];
+
+    setClassStudents(updatedClassStudents);
+
+    // Remove the newly assigned student from Available Students
+    setAllStudents((prevStudents) =>
+      prevStudents.filter(
+        (student) => student._id !== studentId
+      )
+    );
+  } catch (error) {
+    console.error("Failed to assign student:", error);
+  }
+};
+
+const handleRemoveStudent = async (studentId) => {
+  try {
+    await removeStudentFromClass(studentId);
+
+    const response = await getStudentsByClass(
+      selectedClassForStudents._id
+    );
+
+    setClassStudents(response || []);
+
+    // Add the removed student back to Available Students
+    const removedStudent = classStudents.find(
+      (student) => student._id === studentId
+    );
+
+    if (removedStudent) {
+      setAllStudents((prevStudents) => [
+        ...prevStudents,
+        {
+          ...removedStudent,
+          class: null,
+        },
+      ]);
+    }
+  } catch (error) {
+    console.error("Failed to remove student:", error);
   }
 };
 
@@ -664,6 +747,24 @@ const handleAssignSubject = async () => {
 >
   Manage Subjects
 </button>
+</>
+)}
+{(user?.role==="admin" || user?.role==="teacher") && (
+<button
+  onClick={() => handleManageStudents(classItem)}
+  className="
+    ml-2 rounded-lg px-3 py-1.5
+    text-sm font-medium
+    text-blue-600
+    transition-all duration-200
+    hover:bg-blue-50
+    active:scale-95
+  "
+>
+  Manage Students
+</button>
+)}
+{user?.role==="admin" && (
 <button
   onClick={() => handleDeactivateClass(classItem)}
   disabled={!classItem.isActive}
@@ -681,7 +782,7 @@ const handleAssignSubject = async () => {
 >
   {classItem.isActive ? "Deactivate" : "Deactivated"}
 </button>
-</>
+
 )}
 
         
@@ -1190,6 +1291,133 @@ const handleAssignSubject = async () => {
           No classes found.
         </p>
       )}
+
+      {showStudentsModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
+      
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-semibold">
+          Manage Students
+        </h2>
+
+        <button
+          onClick={() => setShowStudentsModal(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
+      </div>
+
+      <p className="mb-4 text-sm text-gray-600">
+        Class:{" "}
+        <span className="font-semibold">
+          {selectedClassForStudents?.name}
+        </span>
+      </p>
+
+      <div className="max-h-96 overflow-y-auto">
+        {classStudents.length === 0 ? (
+          <p className="py-6 text-center text-gray-500">
+            No students assigned to this class.
+          </p>
+        ) : (
+          classStudents.map((student) => (
+            <div
+              key={student._id}
+              className="flex items-center justify-between border-b py-3"
+            >
+              <div>
+                <p className="font-medium">
+                  {student.name}
+                </p>
+
+                <p className="text-sm text-gray-500">
+                  {student.email}
+                </p>
+              </div>
+
+              <button
+  onClick={() => handleRemoveStudent(student._id)}
+  className="rounded-lg bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
+>
+  Remove
+</button>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="mt-6">
+  <h3 className="mb-3 text-lg font-semibold">
+    Available Students
+  </h3>
+   <div className="mt-6 flex justify-end">
+  <button
+    onClick={() => {
+      setShowStudentsModal(false);
+      setSelectedClassForStudents(null);
+      setClassStudents([]);
+      setAllStudents([]);
+      setStudentSearch("");
+    }}
+    className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+  >
+    Close
+  </button>
+</div>
+
+  {allStudents
+  .filter((student) => !student.class)
+  .filter(
+    (student) =>
+      !classStudents.some(
+        (assigned) => assigned._id === student._id
+      )
+  )
+    .filter((student) =>
+    `${student.name} ${student.email}`
+      .toLowerCase()
+      .includes(studentSearch.toLowerCase())
+  )
+    .map((student) => (
+      <div
+        key={student._id}
+        className="flex items-center justify-between border-b py-3"
+      >
+       <div>
+  <p className="font-medium">{student.name}</p>
+
+  <p className="text-sm text-gray-500">
+    {student.email}
+  </p>
+  
+  {student.class && (
+    <p className="text-xs text-yellow-600">
+      Currently assigned to {student.class.name}
+    </p>
+  )}
+</div>
+{student.class ? (
+  <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs text-yellow-700">
+    Already assigned
+  </span>
+) : (
+  <button
+    onClick={() => handleAssignStudent(student._id)}
+    className="rounded-lg bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+  >
+    Assign
+  </button>
+)}
+      </div>
+    ))}
+</div>
+
     </div>
+  </div>
+)}
+    </div>
+    
   );
 }
