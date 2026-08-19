@@ -92,6 +92,19 @@ const [openActionMenu, setOpenActionMenu] = useState(null);
   setEditError("");
 };
 
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (!event.target.closest(".action-menu")) {
+      setOpenActionMenu(null);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
 const loadSubjects = async () => {
   try {
     const data = await getSubjects();
@@ -683,7 +696,7 @@ const handleAssignSubject = async () => {
                 <th className="px-4 py-3">Class Name</th>
                 <th className="px-4 py-3">Department</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
 
@@ -705,7 +718,7 @@ const handleAssignSubject = async () => {
                     {classItem.isActive ? "Active" : "Inactive"}
                   </td>
 
-                 <td className="relative px-4 py-3 text-right">
+                 <td className=" action-menu relative px-4 py-3 text-center">
   {/* Three-dot button */}
   <button
     onClick={() =>
