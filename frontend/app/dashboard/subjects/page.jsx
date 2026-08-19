@@ -40,6 +40,8 @@ const [editForm, setEditForm] = useState({
 const [isUpdating, setIsUpdating] = useState(false);
 const [editError, setEditError] = useState("");
 
+const [openActionMenu, setOpenActionMenu] = useState(null);
+
  const [isDeactivating, setIsDeactivating] = useState(false);
 
  const handleDeactivateSubject = async (subject) => {
@@ -73,6 +75,20 @@ const [editError, setEditError] = useState("");
     setIsDeactivating(false);
   }
 };
+
+  useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (!event.target.closest(".action-menu")) {
+      setOpenActionMenu(null);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
 
 
    const handleCreateSubject = async () => {
@@ -496,21 +512,22 @@ const [editError, setEditError] = useState("");
           <thead className="border-b bg-gray-50">
             <tr>
 
-              <th className="px-4 py-3 text-left text-sm font-semibold">
+              <th className="px-4 py-3 text-left ">
                 Name
               </th>
 
-              <th className="px-4 py-3 text-left text-sm font-semibold">
+              <th className="px-4 py-3 text-left ">
                 Code
               </th>
 
-              <th className="px-4 py-3 text-left text-sm font-semibold">
+              <th className="px-4 py-3 text-left">
                 Status
               </th>
-              
-                <th className="px-4 py-3 text-left text-sm font-semibold">
+              {user?.role==="admin" && (
+                <th className="action-menu realtive px-4 py-3 text-center ">
                 Action
               </th>
+              )}
               
             </tr>
           </thead>
@@ -551,48 +568,87 @@ const [editError, setEditError] = useState("");
                     )}
                   </td>
 
-                  <td className="px-4 py-3 text-right">
-                    {user?.role==="admin" && (
-                      <>
+                 <td className="action-menu relative px-4 py-3 text-center">
+  {user?.role === "admin" && (
+    <>
+      {/* Three dots */}
+      <button
+        onClick={() =>
+          setOpenActionMenu(
+            openActionMenu === subject._id
+              ? null
+              : subject._id
+          )
+        }
+        className="
+          rounded-lg p-2
+          text-gray-500
+          transition
+          hover:bg-gray-100
+          hover:text-gray-800
+          active:scale-95
+        "
+        aria-label="Open actions"
+      >
+        ⋮
+      </button>
 
-                    
-                    <button
-  onClick={() => handleEditClick(subject)}
-  className="
-    rounded-lg px-3 py-1.5
-    text-sm font-medium
-    text-blue-500
-    transition-all duration-200
-    hover:bg-blue-50
-    hover:text-blue-600
-    active:scale-95
-  "
->
-  Edit
-</button>
+      {/* Dropdown */}
+      {openActionMenu === subject._id && (
+        <div
+          className="
+            absolute right-4 bottom-12 z-50
+      w-44 overflow-hidden
+      rounded-xl border border-gray-200
+      bg-white py-1 shadow-lg
+          "
+        >
+          {/* Edit */}
+          <button
+            onClick={() => {
+              handleEditClick(subject);
+              setOpenActionMenu(null);
+            }}
+            className="
+              flex w-full items-center gap-2
+              px-4 py-2.5
+              text-left text-sm
+              text-blue-600
+              transition hover:bg-blue-50
+            "
+          >
+            ✏️
+            Edit
+          </button>
 
-                    <button
-  onClick={() => handleDeactivateSubject(subject)}
-  disabled={!subject.isActive || isDeactivating}
-  className="
-    ml-2 rounded-lg px-3 py-1.5
-    text-sm font-medium
-    text-red-500
-    transition-all duration-200
-    hover:bg-red-50
-    hover:text-red-600
-    active:scale-95
-    disabled:cursor-not-allowed
-    disabled:text-gray-400
-    disabled:hover:bg-transparent
-  "
->
-  {subject.isActive
-    ? "Deactivate"
-    : "Deactivated"}
-</button>
-</>  )}
-                  </td>
+          {/* Deactivate */}
+          <button
+            onClick={() => {
+              if (subject.isActive) {
+                handleDeactivateSubject(subject);
+              }
+              setOpenActionMenu(null);
+            }}
+            disabled={!subject.isActive || isDeactivating}
+            className="
+              flex w-full items-center gap-2
+              px-4 py-2.5
+              text-left text-sm
+              text-red-600
+              transition hover:bg-red-50
+              disabled:cursor-not-allowed
+              disabled:text-gray-400
+              disabled:hover:bg-transparent
+            "
+          >
+            🗑️
+            {subject.isActive ? "Deactivate" : "Deactivated"}
+          </button>
+        </div>
+      )}
+    </>
+  )}
+</td>
 
                 </tr>
               ))
