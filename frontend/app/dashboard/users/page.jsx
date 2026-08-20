@@ -6,8 +6,7 @@ import { useAuthContext } from '@/src/context/AuthContext';
 import { Pencil, Trash2,Search } from "lucide-react";
 import React from 'react';
 
-import Tippy from "@tippyjs/react";
-import "tippy.js/dist/tippy.css";
+import ActionMenu from "@/src/components/ui/ActionMenu";
 
 const Users = () => {
     
@@ -461,68 +460,23 @@ setTotalUsers(data.pagination.totalUsers);
     (user?.role === "teacher" &&
       targetUser.role === "student")
   ) && (
-    <Tippy
-      interactive={true}
-      trigger="click"
-      placement="bottom-end"
-      arrow={false}
-      delay={0}
-      hideOnClick={true}
-      content={
-        <div className="w-40 overflow-hidden rounded-xl bg-white py-1 shadow-lg">
-
-          {/* Edit */}
-          <button
-            onClick={() => {
-              handleEdit(targetUser);
-            }}
-            className="
-              flex w-full items-center gap-2
-              px-4 py-2.5
-              text-left text-sm
-              text-blue-600
-              transition hover:bg-blue-50
-            "
-          >
-            
-            Edit
-          </button>
-
-          {/* Delete */}
-          <button
-            onClick={() => {
-              handleDelete(targetUser._id);
-            }}
-            className="
-              flex w-full items-center gap-2
-              px-4 py-2.5
-              text-left text-sm
-              text-red-600
-              transition hover:bg-red-50
-            "
-          >
-            
-            Delete
-          </button>
-
-        </div>
-      }
-    >
-      {/* Three dots */}
-      <button
-        className="
-          rounded-lg p-2
-          text-gray-500
-          transition
-          hover:bg-gray-100
-          hover:text-gray-800
-          active:scale-95
-        "
-        aria-label="Open actions"
-      >
-        ⋮
-      </button>
-    </Tippy>
+    <ActionMenu
+      width={160}
+      items={[
+        {
+          key: "edit",
+          label: "Edit",
+          tone: "primary",
+          onClick: () => handleEdit(targetUser),
+        },
+        {
+          key: "delete",
+          label: "Delete",
+          tone: "danger",
+          onClick: () => handleDelete(targetUser._id),
+        },
+      ]}
+    />
   )}
 </td>
     </tr>

@@ -11,8 +11,7 @@ import { getClasses , createClass,updateClass,deactivateClass,
 import { useRouter } from "next/navigation";
 import {useAuthContext} from "@/src/context/AuthContext";
 
-import Tippy from "@tippyjs/react";
-import "tippy.js/dist/tippy.css";
+import ActionMenu from "@/src/components/ui/ActionMenu";
 
 export default function ClassesPage() {
   const router = useRouter();
@@ -719,143 +718,44 @@ const handleAssignSubjects = async () => {
                   </td>
 
               <td className="px-4 py-3 text-center">
-  <Tippy
-    interactive={true}
-    trigger="click"
-    placement="bottom-end"
-    arrow={false}
-    delay={0}
-    hideOnClick={true}
-    content={
-      <div className="w-52 overflow-hidden rounded-xl bg-white py-1 shadow-lg">
-
-        {/* View */}
-        <button
-          onClick={() => {
-            router.push(`/dashboard/classes/${classItem._id}`);
-          }}
-          className="
-            flex w-full items-center gap-2
-            px-4 py-2.5
-            text-left text-sm
-            text-green-600
-            transition hover:bg-green-50
-          "
-        >
-          
-          View
-        </button>
-
-        {/* Admin actions */}
-        {user?.role === "admin" && (
-          <>
-            {/* Edit */}
-            <button
-              onClick={() => {
-                handleEditClick(classItem);
-              }}
-              className="
-                flex w-full items-center gap-2
-                px-4 py-2.5
-                text-left text-sm
-                text-blue-600
-                transition hover:bg-blue-50
-              "
-            >
-              
-              Edit
-            </button>
-
-            {/* Manage Subjects */}
-            <button
-              onClick={() => {
-                handleManageSubjects(classItem);
-              }}
-              className="
-                flex w-full items-center gap-2
-                px-4 py-2.5
-                text-left text-sm
-                text-blue-600
-                transition hover:bg-blue-50
-              "
-            >
-              
-              Manage Subjects
-            </button>
-          </>
-        )}
-
-        {/* Admin + Teacher */}
-        {(user?.role === "admin" || user?.role === "teacher") && (
-          <button
-            onClick={() => {
-              handleManageStudents(classItem);
-            }}
-            className="
-              flex w-full items-center gap-2
-              px-4 py-2.5
-              text-left text-sm
-              text-blue-600
-              transition hover:bg-blue-50
-            "
-          >
-            
-            Manage Students
-          </button>
-        )}
-
-        {/* Deactivate */}
-        {user?.role === "admin" && (
-          <>
-            <div className="my-1 border-t border-gray-200" />
-
-            <button
-              onClick={() => {
-                if (classItem.isActive) {
-                  handleDeactivateClass(classItem);
-                }
-              }}
-              disabled={!classItem.isActive}
-              className="
-                flex w-full items-center gap-2
-                px-4 py-2.5
-                text-left text-sm
-                text-red-600
-                transition hover:bg-red-50
-                disabled:cursor-not-allowed
-                disabled:text-gray-400
-                disabled:hover:bg-transparent
-              "
-            >
-              
-             
-                {classItem.isActive
-                  ? "Deactivate"
-                  : "Deactivated"}
-              
-            </button>
-          </>
-        )}
-
-      </div>
-    }
-  >
-    {/* Three dots */}
-    <div>
-    <button
-      className="
-        rounded-lg p-2
-        text-gray-500
-        transition
-        hover:bg-gray-100
-        hover:text-gray-800
-        active:scale-95
-      "
-    >
-      ⋮
-    </button>
-    </div>
-  </Tippy>
+                <ActionMenu
+                  width={208}
+                  items={[
+                    {
+                      key: "view",
+                      label: "View",
+                      tone: "success",
+                      onClick: () =>
+                        router.push(`/dashboard/classes/${classItem._id}`),
+                    },
+                    user?.role === "admin" && {
+                      key: "edit",
+                      label: "Edit",
+                      tone: "primary",
+                      onClick: () => handleEditClick(classItem),
+                    },
+                    user?.role === "admin" && {
+                      key: "manage-subjects",
+                      label: "Manage Subjects",
+                      tone: "primary",
+                      onClick: () => handleManageSubjects(classItem),
+                    },
+                    (user?.role === "admin" || user?.role === "teacher") && {
+                      key: "manage-students",
+                      label: "Manage Students",
+                      tone: "primary",
+                      onClick: () => handleManageStudents(classItem),
+                    },
+                    user?.role === "admin" && {
+                      key: "deactivate",
+                      label: classItem.isActive ? "Deactivate" : "Deactivated",
+                      tone: "danger",
+                      disabled: !classItem.isActive,
+                      dividerBefore: true,
+                      onClick: () => handleDeactivateClass(classItem),
+                    },
+                  ]}
+                />
 </td>
                 </tr>
               ))}
