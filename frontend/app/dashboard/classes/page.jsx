@@ -32,7 +32,7 @@ export default function ClassesPage() {
 
 const [showAddSubject, setShowAddSubject] = useState(false);
 
-const [selectedSubjectId, setSelectedSubjectId] = useState("");
+const [selectedSubjectIds, setSelectedSubjectIds] = useState([]);
 
 const [addingSubject, setAddingSubject] = useState(false);
 
@@ -396,9 +396,9 @@ const handleRemoveSubject = async (subjectId) => {
 };
 
 
-const handleAssignSubject = async () => {
-  if (!selectedSubjectId) {
-    setSubjectError("Please select a subject");
+const handleAssignSubjects = async () => {
+  if (selectedSubjectIds.length === 0) {
+    setSubjectError("Please select at least one subject");
     return;
   }
 
@@ -406,29 +406,35 @@ const handleAssignSubject = async () => {
     setAddingSubject(true);
     setSubjectError("");
 
-    await assignSubjectToClass(
-      selectedClass._id,
-      selectedSubjectId
+    await Promise.all(
+      selectedSubjectIds.map((subjectId) =>
+        assignSubjectToClass(
+          selectedClass._id,
+          subjectId
+        )
+      )
     );
 
-    // Fetch again so subject is populated
-    const updatedSubjects =
-      await getClassSubjects(selectedClass._id);
+    // Fetch again so subjects are populated
+    const updatedSubjects = await getClassSubjects(
+      selectedClass._id
+    );
 
     setClassSubjects(updatedSubjects);
 
-    setSelectedSubjectId("");
+    // Reset selection
+    setSelectedSubjectIds([]);
     setShowAddSubject(false);
 
   } catch (error) {
     console.error(
-      "Failed to assign subject:",
+      "Failed to assign subjects:",
       error
     );
 
     setSubjectError(
       error?.message ||
-      "Failed to assign subject"
+      "Failed to assign subjects"
     );
 
   } finally {
@@ -835,6 +841,7 @@ const handleAssignSubject = async () => {
     }
   >
     {/* Three dots */}
+    <div>
     <button
       className="
         rounded-lg p-2
@@ -844,10 +851,10 @@ const handleAssignSubject = async () => {
         hover:text-gray-800
         active:scale-95
       "
-      aria-label="Open actions"
     >
       ⋮
     </button>
+    </div>
   </Tippy>
 </td>
                 </tr>
@@ -870,65 +877,80 @@ const handleAssignSubject = async () => {
       </p>
     )}
 
-    <select
-      value={selectedSubjectId}
-      onChange={(e) =>
-        setSelectedSubjectId(e.target.value)
-      }
-      className="
-        w-full rounded-lg border
-        bg-white px-4 py-2
-        outline-none
-        focus:ring-2
-      "
-    >
-      <option value="">
-        Select a subject
-      </option>
+   <div>
+  <label className="mb-2 block text-sm font-medium">
+    Select Subjects
+  </label>
 
-      {allSubjects
-        .filter((subject) => subject.isActive)
-        .filter(
-          (subject) =>
-            !classSubjects.some(
-              (item) =>
-                item.subject._id === subject._id
-            )
-        )
-        .map((subject) => (
-          <option
-            key={subject._id}
-            value={subject._id}
-          >
-            {subject.name} ({subject.code})
-          </option>
-        ))}
-    </select>
+  <select
+    multiple
+    value={selectedSubjectIds}
+    onChange={(e) => {
+      const values = Array.from(
+        e.target.selectedOptions,
+        (option) => option.value
+      );
+
+      setSelectedSubjectIds(values);
+    }}
+    className="
+      h-48 w-full rounded-lg border
+      bg-white px-4 py-2
+      outline-none
+      focus:ring-2 focus:ring-blue-500
+    "
+  >
+    {allSubjects
+      .filter((subject) => subject.isActive)
+      .filter(
+        (subject) =>
+          !classSubjects.some(
+            (item) =>
+              item.subject._id === subject._id
+          )
+      )
+      .map((subject) => (
+        <option
+          key={subject._id}
+          value={subject._id}
+          className="py-2"
+        >
+          {subject.name} ({subject.code})
+        </option>
+      ))}
+  </select>
+
+  <p className="mt-2 text-xs text-gray-500">
+    Hold Ctrl (Windows) or Command (Mac) to select multiple subjects.
+  </p>
+</div>
 
     <div className="mt-3 flex gap-2">
 
       <button
-        onClick={handleAssignSubject}
-        disabled={addingSubject}
-        className="
-          rounded-lg bg-blue-600 px-4 py-2
-          text-sm font-medium text-white
-          transition-all duration-200
-          hover:bg-blue-700
-          active:scale-95
-          disabled:cursor-not-allowed
-          disabled:opacity-50
-        "
-      >
-        {addingSubject
-          ? "Assigning..."
-          : "Assign Subject"}
-      </button>
+  onClick={handleAssignSubjects}
+  disabled={addingSubject || selectedSubjectIds.length === 0}
+  className="
+    rounded-lg bg-blue-600 px-4 py-2
+    text-sm font-medium text-white
+    transition-all duration-200
+    hover:bg-blue-700
+    active:scale-95
+    disabled:cursor-not-allowed
+    disabled:opacity-50
+  "
+>
+  {addingSubject
+    ? "Assigning..."
+    : `Assign ${selectedSubjectIds.length || ""} Subject${
+        selectedSubjectIds.length === 1 ? "" : "s"
+      }`}
+</button>
 
       <button
         onClick={() => {
           setShowAddSubject(false);
-          setSelectedSubjectId("");
+          setSelectedSubjectIds([]);
           setSubjectError("");
         }}
         disabled={addingSubject}
@@ -973,7 +995,7 @@ const handleAssignSubject = async () => {
             setClassSubjects([]);
             setTeacherAssignments([]);
             setShowAddSubject(false);
-            setSelectedSubjectId("");
+            setSelectedSubjectIds([]);
             setSubjectError("");
           }}
           className="text-xl text-gray-500 hover:text-gray-700"
@@ -1019,9 +1041,12 @@ const handleAssignSubject = async () => {
           )}
 
           <select
-            value={selectedSubjectId}
+            
+            value={selectedSubjectIds}
             onChange={(e) =>
-              setSelectedSubjectId(e.target.value)
+              setSelectedSubjectIds(
+              Array.from(e.target.selectedOptions, (option) => option.value)
+            )
             }
             className="
               w-full rounded-lg border
@@ -1056,7 +1081,7 @@ const handleAssignSubject = async () => {
           <div className="mt-3 flex gap-2">
 
             <button
-              onClick={handleAssignSubject}
+              onClick={handleAssignSubjects}
               disabled={addingSubject}
               className="
                 rounded-lg bg-blue-600 px-4 py-2
@@ -1076,7 +1101,7 @@ const handleAssignSubject = async () => {
             <button
               onClick={() => {
                 setShowAddSubject(false);
-                setSelectedSubjectId("");
+                setSelectedSubjectIds([]);
                 setSubjectError("");
               }}
               disabled={addingSubject}
@@ -1257,7 +1282,7 @@ const handleAssignSubject = async () => {
             setClassSubjects([]);
             setTeacherAssignments([]);
             setShowAddSubject(false);
-            setSelectedSubjectId("");
+            setSelectedSubjectIds([]);
             setSubjectError("");
           }}
           className="
