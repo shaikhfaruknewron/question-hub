@@ -1275,7 +1275,9 @@ const handleAssignSubject = async () => {
 )}
 
         { user?.role==="admin" && editingClass && (
-  <div className="mb-6 rounded-xl border bg-white p-6">
+   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    
+    <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border bg-white p-6">
     <h2 className="mb-4 text-lg font-semibold">
       Edit Class
     </h2>
@@ -1344,9 +1346,11 @@ const handleAssignSubject = async () => {
       </button>
     </div>
   </div>
+   </div>
 )}
 
       {!loading && !error && classes.length === 0 && (
+      
         <p className="mt-6 text-gray-500">
           No classes found.
         </p>
@@ -1476,8 +1480,11 @@ const handleAssignSubject = async () => {
 
     </div>
   </div>
+
 )}
     </div>
     
-  );
-}
+    
+    
+  )
+};
