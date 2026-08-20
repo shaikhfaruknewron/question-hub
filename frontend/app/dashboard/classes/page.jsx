@@ -58,6 +58,8 @@ const [teacherError, setTeacherError] = useState("");
 const [selectedClassForStudents, setSelectedClassForStudents] = useState(null);
 const [classStudents, setClassStudents] = useState([]);
 
+const [showSubjectsModal, setShowSubjectsModal] = useState(false);
+
 const [allStudents, setAllStudents] = useState([]);
 const [studentSearch, setStudentSearch] = useState("");
 
@@ -173,6 +175,7 @@ const loadSubjects = async () => {
  const handleManageSubjects = async (classItem) => {
   try {
     setSelectedClass(classItem);
+    setShowSubjectsModal(true);
 
     setLoadingSubjects(true);
     setLoadingTeachers(true);
@@ -945,205 +948,331 @@ const handleAssignSubject = async () => {
   </div>
 )}
 
-      { user?.role==="admin" &&selectedClass && (
-  <div className="mt-6 rounded-xl border bg-white p-6">
+     {user?.role === "admin" && showSubjectsModal && selectedClass && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    
+    <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
 
-    <div className="mb-5 flex items-center justify-between">
+      {/* Header */}
+      <div className="mb-5 flex items-center justify-between">
+        
+        <div>
+          <h2 className="text-lg font-semibold">
+            Subjects for {selectedClass.name}
+          </h2>
 
-      <div>
-        <h2 className="text-lg font-semibold">
-          Subjects for {selectedClass.name}
-        </h2>
-
-        <p className="mt-1 text-sm text-gray-500">
-          Manage subjects assigned to this class
-        </p>
-      </div>
-
-      <div className="flex gap-2">
-
-  <button
-    onClick={() => {
-      setShowAddSubject(true);
-      setSubjectError("");
-    }}
-    className="
-      rounded-lg bg-blue-600 px-4 py-2
-      text-sm font-medium text-white
-      transition-all duration-200
-      hover:bg-blue-700
-      active:scale-95
-    "
-  >
-    + Add Subject
-  </button>
-
-  <button
-    onClick={() => {
-      setSelectedClass(null);
-      setClassSubjects([]);
-      setShowAddSubject(false);
-      setSelectedSubjectId("");
-    }}
-    className="
-      rounded-lg border px-3 py-1.5
-      text-sm
-      transition-all duration-200
-      hover:bg-gray-100
-      active:scale-95
-    "
-  >
-    Close
-  </button>
-
-</div>
-
-    </div>
-
-
-    {loadingSubjects ? (
-      <p className="text-sm text-gray-500">
-        Loading subjects...
-      </p>
-    ) : classSubjects.length === 0 ? (
-      <p className="text-sm text-gray-500">
-        No subjects assigned to this class.
-      </p>
-    ) : (
-      <div className="space-y-2">
-
-       {classSubjects.map((item) => {
-  const assignment = teacherAssignments.find(
-    (assignment) =>
-      assignment.subject._id === item.subject._id
-  );
-
-  return (
-    <div
-      key={item._id}
-      className="
-        flex items-center justify-between
-        rounded-lg border p-3
-      "
-    >
-
-      <div>
-        <p className="font-medium">
-          {item.subject.name}
-        </p>
-
-        <p className="text-sm text-gray-500">
-          {item.subject.code}
-        </p>
-
-        <p className="mt-1 text-sm">
-          {assignment ? (
-            <>
-              Teacher:{" "}
-              <span className="font-medium">
-                {assignment.teacher.name}
-              </span>
-            </>
-          ) : (
-            <span className="text-gray-400">
-              No teacher assigned
-            </span>
-          )}
-        </p>
-      </div>
-
-      <div className="flex gap-2">
+          <p className="mt-1 text-sm text-gray-500">
+            Manage subjects assigned to this class
+          </p>
+        </div>
 
         <button
-  onClick={() => {
-    setSelectedSubject(item);
-    setSelectedTeacherId(
-      assignment?.teacher?._id || ""
-    );
-    setTeacherError("");
-    setShowTeacherModal(true);
-  }}
-  className="
-    rounded-lg bg-blue-600 px-3 py-1.5
-    text-sm font-medium text-white
-    transition-all duration-200
-    hover:bg-blue-700
-    active:scale-95
-  "
->
-  {assignment
-    ? "Change Teacher"
-    : "Assign Teacher"}
-</button>
-
-{assignment && (
-  <button
-    onClick={() =>
-      handleRemoveTeacher(
-        assignment._id
-      )
-    }
-    disabled={
-      removingTeacherId ===
-      assignment._id
-    }
-    className="
-      rounded-lg px-3 py-1.5
-      text-sm font-medium
-      text-orange-600
-      transition-all duration-200
-      hover:bg-orange-50
-      hover:text-orange-700
-      active:scale-95
-      disabled:cursor-not-allowed
-      disabled:opacity-50
-    "
-  >
-    {removingTeacherId ===
-    assignment._id
-      ? "Removing..."
-      : "Remove Teacher"}
-  </button>
-)}
-
-        <button
-          onClick={() =>
-            handleRemoveSubject(
-              item.subject._id
-            )
-          }
-          disabled={
-            removingSubjectId ===
-            item.subject._id
-          }
-          className="
-            rounded-lg px-3 py-1.5
-            text-sm font-medium
-            text-red-500
-            transition-all duration-200
-            hover:bg-red-50
-            hover:text-red-600
-            active:scale-95
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
+          onClick={() => {
+            setShowSubjectsModal(false);
+            setSelectedClass(null);
+            setClassSubjects([]);
+            setTeacherAssignments([]);
+            setShowAddSubject(false);
+            setSelectedSubjectId("");
+            setSubjectError("");
+          }}
+          className="text-xl text-gray-500 hover:text-gray-700"
         >
-          {removingSubjectId ===
-          item.subject._id
-            ? "Removing..."
-            : "Remove"}
+          ✕
         </button>
 
       </div>
 
-    </div>
-  );
-})}
 
-       
-        
+      {/* Add Subject button */}
+      <div className="mb-5 flex justify-end">
+        <button
+          onClick={() => {
+            setShowAddSubject(true);
+            setSubjectError("");
+          }}
+          className="
+            rounded-lg bg-blue-600 px-4 py-2
+            text-sm font-medium text-white
+            transition-all duration-200
+            hover:bg-blue-700
+            active:scale-95
+          "
+        >
+          + Add Subject
+        </button>
       </div>
-    )}
+
+
+      {/* Add Subject form */}
+      {showAddSubject && (
+        <div className="mb-5 rounded-lg border bg-gray-50 p-4">
+
+          <h3 className="mb-3 font-medium">
+            Add Subject to {selectedClass.name}
+          </h3>
+
+          {subjectError && (
+            <p className="mb-3 text-sm text-red-500">
+              {subjectError}
+            </p>
+          )}
+
+          <select
+            value={selectedSubjectId}
+            onChange={(e) =>
+              setSelectedSubjectId(e.target.value)
+            }
+            className="
+              w-full rounded-lg border
+              bg-white px-4 py-2
+              outline-none
+              focus:ring-2
+            "
+          >
+            <option value="">
+              Select a subject
+            </option>
+
+            {allSubjects
+              .filter((subject) => subject.isActive)
+              .filter(
+                (subject) =>
+                  !classSubjects.some(
+                    (item) =>
+                      item.subject._id === subject._id
+                  )
+              )
+              .map((subject) => (
+                <option
+                  key={subject._id}
+                  value={subject._id}
+                >
+                  {subject.name} ({subject.code})
+                </option>
+              ))}
+          </select>
+
+          <div className="mt-3 flex gap-2">
+
+            <button
+              onClick={handleAssignSubject}
+              disabled={addingSubject}
+              className="
+                rounded-lg bg-blue-600 px-4 py-2
+                text-sm font-medium text-white
+                transition-all duration-200
+                hover:bg-blue-700
+                active:scale-95
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              {addingSubject
+                ? "Assigning..."
+                : "Assign Subject"}
+            </button>
+
+            <button
+              onClick={() => {
+                setShowAddSubject(false);
+                setSelectedSubjectId("");
+                setSubjectError("");
+              }}
+              disabled={addingSubject}
+              className="
+                rounded-lg border px-4 py-2
+                text-sm
+                transition-all duration-200
+                hover:bg-gray-100
+                active:scale-95
+              "
+            >
+              Cancel
+            </button>
+
+          </div>
+
+        </div>
+      )}
+
+
+      {/* Subjects list */}
+      {loadingSubjects ? (
+        <p className="text-sm text-gray-500">
+          Loading subjects...
+        </p>
+      ) : classSubjects.length === 0 ? (
+        <p className="py-6 text-center text-sm text-gray-500">
+          No subjects assigned to this class.
+        </p>
+      ) : (
+        <div className="space-y-2">
+
+          {classSubjects.map((item) => {
+
+            const assignment = teacherAssignments.find(
+              (assignment) =>
+                assignment.subject._id === item.subject._id
+            );
+
+            return (
+              <div
+                key={item._id}
+                className="
+                  flex items-center justify-between
+                  rounded-lg border p-3
+                "
+              >
+
+                <div>
+                  <p className="font-medium">
+                    {item.subject.name}
+                  </p>
+
+                  <p className="text-sm text-gray-500">
+                    {item.subject.code}
+                  </p>
+
+                  <p className="mt-1 text-sm">
+                    {assignment ? (
+                      <>
+                        Teacher:{" "}
+                        <span className="font-medium">
+                          {assignment.teacher.name}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-gray-400">
+                        No teacher assigned
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+
+                <div className="flex gap-2">
+
+                  {/* Assign / Change Teacher */}
+                  <button
+                    onClick={() => {
+                      setSelectedSubject(item);
+                      setSelectedTeacherId(
+                        assignment?.teacher?._id || ""
+                      );
+                      setTeacherError("");
+                      setShowTeacherModal(true);
+                    }}
+                    className="
+                      rounded-lg bg-blue-600 px-3 py-1.5
+                      text-sm font-medium text-white
+                      transition-all duration-200
+                      hover:bg-blue-700
+                      active:scale-95
+                    "
+                  >
+                    {assignment
+                      ? "Change Teacher"
+                      : "Assign Teacher"}
+                  </button>
+
+
+                  {/* Remove Teacher */}
+                  {assignment && (
+                    <button
+                      onClick={() =>
+                        handleRemoveTeacher(
+                          assignment._id
+                        )
+                      }
+                      disabled={
+                        removingTeacherId ===
+                        assignment._id
+                      }
+                      className="
+                        rounded-lg px-3 py-1.5
+                        text-sm font-medium
+                        text-orange-600
+                        transition-all duration-200
+                        hover:bg-orange-50
+                        hover:text-orange-700
+                        active:scale-95
+                        disabled:cursor-not-allowed
+                        disabled:opacity-50
+                      "
+                    >
+                      {removingTeacherId ===
+                      assignment._id
+                        ? "Removing..."
+                        : "Remove Teacher"}
+                    </button>
+                  )}
+
+
+                  {/* Remove Subject */}
+                  <button
+                    onClick={() =>
+                      handleRemoveSubject(
+                        item.subject._id
+                      )
+                    }
+                    disabled={
+                      removingSubjectId ===
+                      item.subject._id
+                    }
+                    className="
+                      rounded-lg px-3 py-1.5
+                      text-sm font-medium
+                      text-red-500
+                      transition-all duration-200
+                      hover:bg-red-50
+                      hover:text-red-600
+                      active:scale-95
+                      disabled:cursor-not-allowed
+                      disabled:opacity-50
+                    "
+                  >
+                    {removingSubjectId ===
+                    item.subject._id
+                      ? "Removing..."
+                      : "Remove"}
+                  </button>
+
+                </div>
+
+              </div>
+            );
+          })}
+
+        </div>
+      )}
+
+
+      {/* Close */}
+      <div className="mt-6 flex justify-end">
+        <button
+          onClick={() => {
+            setShowSubjectsModal(false);
+            setSelectedClass(null);
+            setClassSubjects([]);
+            setTeacherAssignments([]);
+            setShowAddSubject(false);
+            setSelectedSubjectId("");
+            setSubjectError("");
+          }}
+          className="
+            rounded-lg border px-4 py-2
+            text-sm
+            transition-all duration-200
+            hover:bg-gray-100
+            active:scale-95
+          "
+        >
+          Close
+        </button>
+      </div>
+
+    </div>
   </div>
 )}
 
