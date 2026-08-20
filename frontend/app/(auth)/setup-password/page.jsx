@@ -1,12 +1,12 @@
 "use client";
 
 import React from 'react'
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import {useRouter,useSearchParams} from "next/navigation";
 import { api } from "@/src/utils/api";
 
 
-const SetupPassword = () => {
+const SetupPasswordContent = () => {
     const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -165,5 +165,21 @@ const SetupPassword = () => {
     </div>
   )
 }
+
+const SetupPassword = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center">
+            <p className="text-sm text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <SetupPasswordContent />
+    </Suspense>
+  );
+};
 
 export default SetupPassword;
