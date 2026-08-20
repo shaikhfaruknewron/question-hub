@@ -6,6 +6,9 @@ import { useAuthContext } from '@/src/context/AuthContext';
 import { Pencil, Trash2,Search } from "lucide-react";
 import React from 'react';
 
+import Tippy from "@tippyjs/react";
+import "tippy.js/dist/tippy.css";
+
 const Users = () => {
     
     const { user } = useAuthContext();
@@ -21,26 +24,10 @@ const Users = () => {
      const [search, setSearch] = useState("");
      const [debouncedSearch, setDebouncedSearch] = useState("");
 
-     const [openActionMenu, setOpenActionMenu] = useState(null);
 
      const USERS_PER_PAGE = 10;
 
-     useEffect(() => {
-     const handleClickOutside = (event) => {
-    if (!event.target.closest(".action-menu")) {
-      setOpenActionMenu(null);
-    }
-   };
-
-   document.addEventListener("mousedown", handleClickOutside);
-
-   return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-   };
-   }, []);
-
-
-    const [showAddUser, setShowAddUser] = useState(false);
+     const [showAddUser, setShowAddUser] = useState(false);
 
     const [newUser, setNewUser] = useState({
     name: "",
@@ -467,23 +454,62 @@ setTotalUsers(data.pagination.totalUsers);
         {targetUser.isEmailVerified ? "Yes" : "No"}
       </td>
 
-      <td className="action-menu relative px-6 py-4 text-center">
+     <td className="px-6 py-4 text-center">
   {(
     (user?.role === "admin" &&
       user._id !== targetUser._id) ||
     (user?.role === "teacher" &&
       targetUser.role === "student")
   ) && (
-    <>
+    <Tippy
+      interactive={true}
+      trigger="click"
+      placement="bottom-end"
+      arrow={false}
+      delay={0}
+      hideOnClick={true}
+      content={
+        <div className="w-40 overflow-hidden rounded-xl bg-white py-1 shadow-lg">
+
+          {/* Edit */}
+          <button
+            onClick={() => {
+              handleEdit(targetUser);
+            }}
+            className="
+              flex w-full items-center gap-2
+              px-4 py-2.5
+              text-left text-sm
+              text-blue-600
+              transition hover:bg-blue-50
+            "
+          >
+            
+            Edit
+          </button>
+
+          {/* Delete */}
+          <button
+            onClick={() => {
+              handleDelete(targetUser._id);
+            }}
+            className="
+              flex w-full items-center gap-2
+              px-4 py-2.5
+              text-left text-sm
+              text-red-600
+              transition hover:bg-red-50
+            "
+          >
+            
+            Delete
+          </button>
+
+        </div>
+      }
+    >
       {/* Three dots */}
       <button
-        onClick={() =>
-          setOpenActionMenu(
-            openActionMenu === targetUser._id
-              ? null
-              : targetUser._id
-          )
-        }
         className="
           rounded-lg p-2
           text-gray-500
@@ -496,55 +522,7 @@ setTotalUsers(data.pagination.totalUsers);
       >
         ⋮
       </button>
-
-      {/* Dropdown */}
-      {openActionMenu === targetUser._id && (
-        <div
-          className="
-            absolute right-4 top-12 z-50
-            w-40 overflow-hidden
-            rounded-xl border border-gray-200
-            bg-white py-1 shadow-lg
-          "
-        >
-          {/* Edit */}
-          <button
-            onClick={() => {
-              handleEdit(targetUser);
-              setOpenActionMenu(null);
-            }}
-            className="
-              flex w-full items-center gap-2
-              px-4 py-2.5
-              text-left text-sm
-              text-blue-600
-              transition hover:bg-blue-50
-            "
-          >
-            <Pencil size={16} />
-            Edit
-          </button>
-
-          {/* Delete */}
-          <button
-            onClick={() => {
-              handleDelete(targetUser._id);
-              setOpenActionMenu(null);
-            }}
-            className="
-              flex w-full items-center gap-2
-              px-4 py-2.5
-              text-left text-sm
-              text-red-600
-              transition hover:bg-red-50
-            "
-          >
-            <Trash2 size={16} />
-            Delete
-          </button>
-        </div>
-      )}
-    </>
+    </Tippy>
   )}
 </td>
     </tr>

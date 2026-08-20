@@ -11,6 +11,9 @@ import { getClasses , createClass,updateClass,deactivateClass,
 import { useRouter } from "next/navigation";
 import {useAuthContext} from "@/src/context/AuthContext";
 
+import Tippy from "@tippyjs/react";
+import "tippy.js/dist/tippy.css";
+
 export default function ClassesPage() {
   const router = useRouter();
   const {user} =useAuthContext();
@@ -58,7 +61,7 @@ const [classStudents, setClassStudents] = useState([]);
 const [allStudents, setAllStudents] = useState([]);
 const [studentSearch, setStudentSearch] = useState("");
 
-const [openActionMenu, setOpenActionMenu] = useState(null);
+
 
  const [removingTeacherId, setRemovingTeacherId] =
   useState(null);
@@ -92,19 +95,7 @@ const [openActionMenu, setOpenActionMenu] = useState(null);
   setEditError("");
 };
 
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (!event.target.closest(".action-menu")) {
-      setOpenActionMenu(null);
-    }
-  };
 
-  document.addEventListener("mousedown", handleClickOutside);
-
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
 const loadSubjects = async () => {
   try {
     const data = await getSubjects();
@@ -718,142 +709,143 @@ const handleAssignSubject = async () => {
                     {classItem.isActive ? "Active" : "Inactive"}
                   </td>
 
-                 <td className=" action-menu relative px-4 py-3 text-center">
-  {/* Three-dot button */}
-  <button
-    onClick={() =>
-      setOpenActionMenu(
-        openActionMenu === classItem._id
-          ? null
-          : classItem._id
-      )
-    }
-    className="
-      rounded-lg p-2
-      text-gray-500
-      transition-all duration-200
-      hover:bg-gray-100
-      hover:text-gray-800
-      active:scale-95
-    "
-    aria-label="Open actions"
-  >
-    ⋮
-  </button>
+              <td className="px-4 py-3 text-center">
+  <Tippy
+    interactive={true}
+    trigger="click"
+    placement="bottom-end"
+    arrow={false}
+    delay={0}
+    hideOnClick={true}
+    content={
+      <div className="w-52 overflow-hidden rounded-xl bg-white py-1 shadow-lg">
 
-  {/* Dropdown */}
-  {openActionMenu === classItem._id && (
-    <div
-      className="
-        absolute right-4 top-12 z-50
-        w-52 overflow-hidden
-        rounded-xl border border-gray-200
-        bg-white py-1 shadow-lg
-      "
-    >
-      {/* View - Everyone */}
-      <button
-        onClick={() => {
-          router.push(`/dashboard/classes/${classItem._id}`);
-          setOpenActionMenu(null);
-        }}
-        className="
-          flex w-full items-center gap-2
-          px-4 py-2.5 text-left text-sm
-          text-green-600
-          transition hover:bg-green-50
-        "
-      >
-        <span>👁</span>
-        View
-      </button>
-
-      {/* Admin actions */}
-      {user?.role === "admin" && (
-        <>
-          <button
-            onClick={() => {
-              handleEditClick(classItem);
-              setOpenActionMenu(null);
-            }}
-            className="
-              flex w-full items-center gap-2
-              px-4 py-2.5 text-left text-sm
-              text-blue-600
-              transition hover:bg-blue-50
-            "
-          >
-            <span>✏️</span>
-            Edit
-          </button>
-
-          <button
-            onClick={() => {
-              handleManageSubjects(classItem);
-              setOpenActionMenu(null);
-            }}
-            className="
-              flex w-full items-center gap-2
-              px-4 py-2.5 text-left text-sm
-              text-blue-600
-              transition hover:bg-blue-50
-            "
-          >
-            <span>📚</span>
-            Manage Subjects
-          </button>
-        </>
-      )}
-
-      {/* Admin + Teacher */}
-      {(user?.role === "admin" || user?.role === "teacher") && (
+        {/* View */}
         <button
           onClick={() => {
-            handleManageStudents(classItem);
-            setOpenActionMenu(null);
+            router.push(`/dashboard/classes/${classItem._id}`);
           }}
           className="
             flex w-full items-center gap-2
-            px-4 py-2.5 text-left text-sm
-            text-blue-600
-            transition hover:bg-blue-50
+            px-4 py-2.5
+            text-left text-sm
+            text-green-600
+            transition hover:bg-green-50
           "
         >
-          <span>👨‍🎓</span>
-          Manage Students
+          
+          View
         </button>
-      )}
 
-      {/* Admin - destructive action */}
-      {user?.role === "admin" && (
-        <>
-          <div className="my-1 border-t border-gray-200" />
+        {/* Admin actions */}
+        {user?.role === "admin" && (
+          <>
+            {/* Edit */}
+            <button
+              onClick={() => {
+                handleEditClick(classItem);
+              }}
+              className="
+                flex w-full items-center gap-2
+                px-4 py-2.5
+                text-left text-sm
+                text-blue-600
+                transition hover:bg-blue-50
+              "
+            >
+              
+              Edit
+            </button>
 
+            {/* Manage Subjects */}
+            <button
+              onClick={() => {
+                handleManageSubjects(classItem);
+              }}
+              className="
+                flex w-full items-center gap-2
+                px-4 py-2.5
+                text-left text-sm
+                text-blue-600
+                transition hover:bg-blue-50
+              "
+            >
+              
+              Manage Subjects
+            </button>
+          </>
+        )}
+
+        {/* Admin + Teacher */}
+        {(user?.role === "admin" || user?.role === "teacher") && (
           <button
             onClick={() => {
-              if (classItem.isActive) {
-                handleDeactivateClass(classItem);
-              }
-              setOpenActionMenu(null);
+              handleManageStudents(classItem);
             }}
-            disabled={!classItem.isActive}
             className="
               flex w-full items-center gap-2
-              px-4 py-2.5 text-left text-sm
-              text-red-600
-              transition hover:bg-red-50
-              disabled:cursor-not-allowed
-              disabled:text-gray-400
-              disabled:hover:bg-transparent
+              px-4 py-2.5
+              text-left text-sm
+              text-blue-600
+              transition hover:bg-blue-50
             "
           >
-            <span>🗑</span>
-            {classItem.isActive ? "Deactivate" : "Deactivated"}
+            
+            Manage Students
           </button>
-        </>
-      )}
-    </div>
-  )}
+        )}
+
+        {/* Deactivate */}
+        {user?.role === "admin" && (
+          <>
+            <div className="my-1 border-t border-gray-200" />
+
+            <button
+              onClick={() => {
+                if (classItem.isActive) {
+                  handleDeactivateClass(classItem);
+                }
+              }}
+              disabled={!classItem.isActive}
+              className="
+                flex w-full items-center gap-2
+                px-4 py-2.5
+                text-left text-sm
+                text-red-600
+                transition hover:bg-red-50
+                disabled:cursor-not-allowed
+                disabled:text-gray-400
+                disabled:hover:bg-transparent
+              "
+            >
+              
+             
+                {classItem.isActive
+                  ? "Deactivate"
+                  : "Deactivated"}
+              
+            </button>
+          </>
+        )}
+
+      </div>
+    }
+  >
+    {/* Three dots */}
+    <button
+      className="
+        rounded-lg p-2
+        text-gray-500
+        transition
+        hover:bg-gray-100
+        hover:text-gray-800
+        active:scale-95
+      "
+      aria-label="Open actions"
+    >
+      ⋮
+    </button>
+  </Tippy>
 </td>
                 </tr>
               ))}

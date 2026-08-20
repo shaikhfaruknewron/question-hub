@@ -8,6 +8,8 @@ import {
   updateSubject,
   deactivateSubject,
 } from "@/src/utils/api";
+import Tippy from "@tippyjs/react";
+import "tippy.js/dist/tippy.css";
 
 import {useAuthContext} from "@/src/context/AuthContext";
 
@@ -39,8 +41,6 @@ const [editForm, setEditForm] = useState({
 
 const [isUpdating, setIsUpdating] = useState(false);
 const [editError, setEditError] = useState("");
-
-const [openActionMenu, setOpenActionMenu] = useState(null);
 
  const [isDeactivating, setIsDeactivating] = useState(false);
 
@@ -76,19 +76,7 @@ const [openActionMenu, setOpenActionMenu] = useState(null);
   }
 };
 
-  useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (!event.target.closest(".action-menu")) {
-      setOpenActionMenu(null);
-    }
-  };
-
-  document.addEventListener("mousedown", handleClickOutside);
-
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
+ 
 
 
    const handleCreateSubject = async () => {
@@ -568,46 +556,22 @@ const [openActionMenu, setOpenActionMenu] = useState(null);
                     )}
                   </td>
 
-                 <td className="action-menu relative px-4 py-3 text-center">
+              <td className="px-4 py-3 text-center">
   {user?.role === "admin" && (
-    <>
-      {/* Three dots */}
-      <button
-        onClick={() =>
-          setOpenActionMenu(
-            openActionMenu === subject._id
-              ? null
-              : subject._id
-          )
-        }
-        className="
-          rounded-lg p-2
-          text-gray-500
-          transition
-          hover:bg-gray-100
-          hover:text-gray-800
-          active:scale-95
-        "
-        aria-label="Open actions"
-      >
-        ⋮
-      </button>
-
-      {/* Dropdown */}
-      {openActionMenu === subject._id && (
-        <div
-          className="
-            absolute right-4 bottom-12 z-50
-      w-44 overflow-hidden
-      rounded-xl border border-gray-200
-      bg-white py-1 shadow-lg
-          "
-        >
+    <Tippy
+      interactive={true}
+      trigger="click"
+      placement="bottom-end"
+      arrow={false}
+      delay={0}
+      hideOnClick={true}
+      content={
+        <div className="w-44 overflow-hidden rounded-xl bg-white py-1 shadow-lg">
+          
           {/* Edit */}
           <button
             onClick={() => {
               handleEditClick(subject);
-              setOpenActionMenu(null);
             }}
             className="
               flex w-full items-center gap-2
@@ -617,7 +581,7 @@ const [openActionMenu, setOpenActionMenu] = useState(null);
               transition hover:bg-blue-50
             "
           >
-            ✏️
+            
             Edit
           </button>
 
@@ -627,7 +591,6 @@ const [openActionMenu, setOpenActionMenu] = useState(null);
               if (subject.isActive) {
                 handleDeactivateSubject(subject);
               }
-              setOpenActionMenu(null);
             }}
             disabled={!subject.isActive || isDeactivating}
             className="
@@ -641,12 +604,30 @@ const [openActionMenu, setOpenActionMenu] = useState(null);
               disabled:hover:bg-transparent
             "
           >
-            🗑️
-            {subject.isActive ? "Deactivate" : "Deactivated"}
+            
+            <span>
+              {subject.isActive ? "Deactivate" : "Deactivated"}
+            </span>
           </button>
+
         </div>
-      )}
-    </>
+      }
+    >
+      {/* Three dots */}
+      <button
+        className="
+          rounded-lg p-2
+          text-gray-500
+          transition
+          hover:bg-gray-100
+          hover:text-gray-800
+          active:scale-95
+        "
+        aria-label="Open actions"
+      >
+        ⋮
+      </button>
+    </Tippy>
   )}
 </td>
 
