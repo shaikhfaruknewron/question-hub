@@ -39,7 +39,7 @@ const seed = async () => {
 
   const javascript = await upsertCategory("JavaScript", "Core language questions", teacher._id);
   
-
+  
   const questionSeeds = [
     {
       title: "Which keyword declares a block-scoped variable that cannot be reassigned?",

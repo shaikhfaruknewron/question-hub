@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState , useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import Button from "@/src/components/ui/Button";
+import Input from "@/src/components/ui/Input";
 import Select from "@/src/components/ui/Select";
 import Spinner from "@/src/components/ui/Spinner";
 import QuestionList from "@/src/components/questions/QuestionList";
@@ -26,17 +27,46 @@ const QuestionsPage = () => {
   const [difficulty, setDifficulty] = useState("");
   const [type, setType] = useState("");
   const [actionError, setActionError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 12;
+
+  useEffect(() => {
+  setPageInput(String(currentPage));
+}, [currentPage]);
+
+  const [pageInput, setPageInput] = useState("1");
 
   const endpoint = useMemo(() => {
-    const params = new URLSearchParams({ limit: "50" });
-    if (difficulty) params.set("difficulty", difficulty);
-    if (type) params.set("type", type);
-    return `/questions?${params.toString()}`;
-  }, [difficulty, type]);
+  const params = new URLSearchParams({
+    page: String(currentPage),
+    limit: String(limit),
+  });
+
+  if (difficulty) params.set("difficulty", difficulty);
+  if (type) params.set("type", type);
+
+  return `/questions?${params.toString()}`;
+}, [difficulty, type, currentPage]);
 
   const { data, isLoading, error, refetch } = useFetch(endpoint);
 
   const canManage = user?.role === "admin" || user?.role === "teacher";
+
+  const goToPage = () => {
+  const page = Number(pageInput);
+
+  if (!Number.isInteger(page)) {
+    setPageInput(String(currentPage));
+    return;
+  }
+
+  if (page < 1 || page > (data?.pages || 1)) {
+    setPageInput(String(currentPage));
+    return;
+  }
+
+  setCurrentPage(page);
+};
 
   const handleEdit = (id) => router.push(`/dashboard/questions/${id}`);
 
@@ -69,7 +99,10 @@ const QuestionsPage = () => {
           <Select
             id="difficulty-filter"
             value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
+            onChange={(e) => { setDifficulty(e.target.value);
+              setCurrentPage(1);
+            }}
+            
             options={DIFFICULTY_OPTIONS}
           />
         </div>
@@ -77,7 +110,9 @@ const QuestionsPage = () => {
           <Select
             id="type-filter"
             value={type}
-            onChange={(e) => setType(e.target.value)}
+            onChange={(e) => {setType(e.target.value)
+              setCurrentPage(1);
+            }}
             options={TYPE_OPTIONS}
           />
         </div>
@@ -91,14 +126,63 @@ const QuestionsPage = () => {
         <p className="text-sm text-red-600">{error}</p>
       ) : (
         <>
-          <p className="text-xs text-gray-500">{data?.total ?? 0} question(s)</p>
-          <QuestionList
-            questions={data?.questions || []}
-            canManage={canManage}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        </>
+  <p className="text-xs text-gray-500">
+    {data?.total ?? 0} question(s)
+  </p>
+
+  <QuestionList
+    questions={data?.questions || []}
+    canManage={canManage}
+    onEdit={handleEdit}
+    onDelete={handleDelete}
+  />
+
+  {data?.pages > 1 && (
+    <div className="flex items-center justify-center gap-3">
+      <Button
+        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+        disabled={currentPage === 1}
+      >
+        Previous
+      </Button>
+
+      <span className="text-sm text-gray-600">
+        Page
+      </span>
+      
+      <Input
+      id="page-input"
+      type="number"
+      min="1"
+      max={data?.pages}
+      value={pageInput}
+      onChange={(e) => setPageInput(e.target.value)}
+      onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        goToPage();
+      }
+      }}
+     />
+
+     <span className="text-sm text-gray-600">
+    of {data?.pages}
+    </span>
+
+     <Button onClick={goToPage}>
+      Go
+     </Button>
+
+      <Button
+        onClick={() =>
+          setCurrentPage((prev) => Math.min(prev + 1, data?.pages))
+        }
+        disabled={currentPage === data?.pages}
+      >
+        Next
+      </Button>
+    </div>
+  )}
+</>
       )}
     </div>
   );
