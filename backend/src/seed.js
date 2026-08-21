@@ -38,7 +38,7 @@ const seed = async () => {
   const [admin, teacher, student] = await Promise.all(USERS.map(upsertUser));
 
   const javascript = await upsertCategory("JavaScript", "Core language questions", teacher._id);
-  
+  const databases = await upsertCategory("Databases", "Data modelling and query questions", teacher._id);
 
   const questionSeeds = [
     {

@@ -1,4 +1,9 @@
 import mongoose from "mongoose";
+import {
+  QUESTION_TYPE_VALUES,
+  QUESTION_DIFFICULTY_VALUES,
+  QUESTION_DIFFICULTIES,
+} from "../constants/question.constants.js";
 
 const optionSchema = new mongoose.Schema(
   {
@@ -13,12 +18,16 @@ const questionSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     type: {
       type: String,
-      enum: ["single-choice", "multiple-choice", "true-false", "descriptive", "coding"],
+      enum: QUESTION_TYPE_VALUES,
       required: true,
     },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     tags: [{ type: String, trim: true }],
-    difficulty: { type: String, enum: ["easy", "medium", "hard"], default: "medium" },
+    difficulty: {
+      type: String,
+      enum: QUESTION_DIFFICULTY_VALUES,
+      default: QUESTION_DIFFICULTIES.MEDIUM,
+    },
     options: [optionSchema],
     correctAnswer: { type: String, default: "" },
     explanation: { type: String, default: "" },

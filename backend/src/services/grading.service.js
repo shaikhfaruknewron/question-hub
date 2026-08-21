@@ -1,6 +1,7 @@
 import Question from "../models/Question.model.js";
+import { QUESTION_TYPES } from "../constants/question.constants.js";
 
-export const MANUAL_TYPES = ["descriptive", "coding"];
+export const MANUAL_TYPES = [QUESTION_TYPES.DESCRIPTIVE, QUESTION_TYPES.CODING];
 
 const isAnswered = (answer) =>
   (answer.selectedOptions || []).length > 0 ||
@@ -15,14 +16,17 @@ export const gradeAnswer = (question, answer, marks = question.marks) => {
     return { isCorrect: false, marksAwarded: 0 };
   }
 
-  if (question.type === "single-choice" || question.type === "true-false") {
+  if (
+    question.type === QUESTION_TYPES.SINGLE_CHOICE ||
+    question.type === QUESTION_TYPES.TRUE_FALSE
+  ) {
     const correctOption = question.options.find((opt) => opt.isCorrect);
     const selected = answer.selectedOptions?.[0]?.toString();
     const isCorrect = Boolean(correctOption) && selected === correctOption._id.toString();
     return { isCorrect, marksAwarded: isCorrect ? marks : -question.negativeMarks };
   }
 
-  if (question.type === "multiple-choice") {
+  if (question.type === QUESTION_TYPES.MULTIPLE_CHOICE) {
     const correctIds = question.options
       .filter((opt) => opt.isCorrect)
       .map((opt) => opt._id.toString())

@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  QUESTION_TYPES,
+  QUESTION_TYPE_VALUES,
+  QUESTION_CHOICE_TYPES,
+  QUESTION_DIFFICULTY_VALUES,
+} from "../constants/question.constants.js";
 
 const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, "Must be a valid id");
 
@@ -7,14 +13,12 @@ const optionSchema = z.object({
   isCorrect: z.boolean().optional(),
 });
 
-const CHOICE_TYPES = ["single-choice", "multiple-choice", "true-false"];
-
 const questionShape = z.object({
   title: z.string().min(3),
-  type: z.enum(["single-choice", "multiple-choice", "true-false", "descriptive", "coding"]),
+  type: z.enum(QUESTION_TYPE_VALUES),
   category: objectId,
   tags: z.array(z.string()).optional(),
-  difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+  difficulty: z.enum(QUESTION_DIFFICULTY_VALUES).optional(),
   options: z.array(optionSchema).optional(),
   correctAnswer: z.string().optional(),
   explanation: z.string().optional(),
@@ -41,7 +45,7 @@ const questionShape = z.object({
 // Choice questions are useless without options and a correct answer, and the
 // grader silently marks everything wrong if they are missing.
 const checkChoiceOptions = (value, ctx) => {
-  if (!value.type || !CHOICE_TYPES.includes(value.type)) return;
+  if (!value.type || !QUESTION_CHOICE_TYPES.includes(value.type)) return;
 
   const options = value.options || [];
   if (options.length < 2) {
@@ -61,7 +65,7 @@ const checkChoiceOptions = (value, ctx) => {
       message: "Mark at least one option as correct",
     });
   }
-  if (value.type !== "multiple-choice" && correctCount > 1) {
+  if (value.type !== QUESTION_TYPES.MULTIPLE_CHOICE && correctCount > 1) {
     ctx.addIssue({
       code: "custom",
       path: ["options"],
