@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "seed:questions": "node src/seeds/questions.seed.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
