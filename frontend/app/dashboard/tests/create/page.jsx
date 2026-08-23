@@ -30,12 +30,14 @@ const CreateTestPage = () => {
 
 
   const [selected, setSelected] = useState({});
+  const [topicFilter, setTopicFilter] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [isLoadingAcademicData, setIsLoadingAcademicData] = useState(true);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [selectedTag, setSelectedTag] = useState("");
 
   useEffect(() => {
   const loadClasses = async () => {
@@ -171,6 +173,20 @@ if (
 
 
   const questions = questionsData?.questions || [];
+
+  const availableTopics = useMemo(() => {
+    return [...new Set(questions.map((question) => question.topic).filter(Boolean))].sort(
+      (firstTopic, secondTopic) => firstTopic.localeCompare(secondTopic)
+    );
+  }, [questions]);
+
+  const filteredQuestions = useMemo(
+    () =>
+      topicFilter
+        ? questions.filter((question) => question.topic === topicFilter)
+        : questions,
+    [questions, topicFilter]
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -361,18 +377,43 @@ if (
         </Card>
 
         <Card className="max-w-2xl">
-          <span className="mb-3 block text-sm font-medium text-gray-700">
-            Select questions ({Object.keys(selected).length} selected · {totalMarks} marks)
-          </span>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <span className="text-sm font-medium text-gray-700">
+              Select questions ({Object.keys(selected).length} selected · {totalMarks} marks)
+            </span>
+
+            <div className="w-full sm:w-56">
+              <label htmlFor="question-topic-filter" className="mb-1.5 block text-sm font-medium text-gray-700">
+                Filter by topic
+              </label>
+              <select
+                id="question-topic-filter"
+                value={topicFilter}
+                onChange={(event) => setTopicFilter(event.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              >
+                <option value="">All topics</option>
+                {availableTopics.map((topic) => (
+                  <option key={topic} value={topic}>
+                    {topic}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           {isLoading ? (
             <Spinner />
           ) : questions.length === 0 ? (
             <p className="text-sm text-gray-500">
               No questions available. Create some questions first.
             </p>
+          ) : filteredQuestions.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No questions found for this topic.
+            </p>
           ) : (
             <div className="flex max-h-80 flex-col gap-2 overflow-y-auto">
-              {questions.map((question) => (
+              {filteredQuestions.map((question) => (
                 <label
                   key={question._id}
                   className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 text-sm"

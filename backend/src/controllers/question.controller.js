@@ -13,7 +13,7 @@ export const getQuestions = asyncHandler(async (req, res) => {
 
   const filter = { isActive: true };
   if (category) filter.category = category;
-  if (topic) filter.topic = topic;
+  if (topic) {filter.topic = { $regex: `^${topic}$`, $options: "i" };}
   if (difficulty) filter.difficulty = difficulty;
   if (type) filter.type = type;
   if (tag) filter.tags = tag;
