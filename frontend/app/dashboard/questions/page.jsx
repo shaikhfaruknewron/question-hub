@@ -9,10 +9,12 @@ import Input from "@/src/components/ui/Input";
 import Select from "@/src/components/ui/Select";
 import Spinner from "@/src/components/ui/Spinner";
 import QuestionList from "@/src/components/questions/QuestionList";
+
 import useAuth from "@/src/hooks/useAuth";
 import useFetch from "@/src/hooks/useFetch";
-import { api } from "@/src/utils/api";
+import { api} from "@/src/utils/api";
 import { DIFFICULTY_LEVELS, QUESTION_TYPES } from "@/src/utils/constants";
+
 
 const DIFFICULTY_OPTIONS = [
   { value: "", label: "All difficulties" },
@@ -21,14 +23,32 @@ const DIFFICULTY_OPTIONS = [
 
 const TYPE_OPTIONS = [{ value: "", label: "All types" }, ...QUESTION_TYPES];
 
+const TOPIC_OPTIONS = [
+  { value: "", label: "All topics" },
+  { value: "databases", label: "Databases" },
+  { value: "git", label: "Git" },
+  { value: "javascript", label: "JavaScript" },
+  { value: "dataStructures", label: "DSA" },
+  { value: "index", label: "index" },
+  { value: "networking", label: "Networking" },
+  { value: "nodejs", label: "Nodejs" },
+  { value: "operatingSystems", label: "OS" },
+  { value: "python", label: "Python" },
+  { value: "react", label: "React" },
+  { value: "webFundamentals", label: "Web" },
+];
+
 const QuestionsPage = () => {
   const router = useRouter();
   const { user } = useAuth();
   const [difficulty, setDifficulty] = useState("");
   const [type, setType] = useState("");
+  const [topic, setTopic] = useState("");
   const [actionError, setActionError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 12;
+  
+  
 
   useEffect(() => {
   setPageInput(String(currentPage));
@@ -41,12 +61,13 @@ const QuestionsPage = () => {
     page: String(currentPage),
     limit: String(limit),
   });
-
+ 
   if (difficulty) params.set("difficulty", difficulty);
   if (type) params.set("type", type);
+  if (topic) params.set("topic", topic);
 
   return `/questions?${params.toString()}`;
-}, [difficulty, type, currentPage]);
+}, [ difficulty, type, topic, currentPage]);
 
   const { data, isLoading, error, refetch } = useFetch(endpoint);
 
@@ -94,29 +115,42 @@ const QuestionsPage = () => {
         )}
       </div>
 
-      <div className="flex gap-4">
-        <div className="w-48">
-          <Select
-            id="difficulty-filter"
-            value={difficulty}
-            onChange={(e) => { setDifficulty(e.target.value);
-              setCurrentPage(1);
-            }}
-            
-            options={DIFFICULTY_OPTIONS}
-          />
-        </div>
-        <div className="w-48">
-          <Select
-            id="type-filter"
-            value={type}
-            onChange={(e) => {setType(e.target.value)
-              setCurrentPage(1);
-            }}
-            options={TYPE_OPTIONS}
-          />
-        </div>
-      </div>
+      <div className="flex flex-wrap gap-4">
+  <div className="w-48">
+    <Select
+      id="difficulty-filter"
+      value={difficulty}
+      onChange={(e) => {
+        setDifficulty(e.target.value);
+        setCurrentPage(1);
+      }}
+      options={DIFFICULTY_OPTIONS}
+    />
+  </div>
+
+  <div className="w-48">
+    <Select
+      id="type-filter"
+      value={type}
+      onChange={(e) => {
+        setType(e.target.value);
+        setCurrentPage(1);
+      }}
+      options={TYPE_OPTIONS}
+    />
+  </div>
+   <div className="w-48">
+  <Select
+    id="topic-filter"
+    value={topic}
+    onChange={(e) => {
+      setTopic(e.target.value);
+      setCurrentPage(1);
+    }}
+    options={TOPIC_OPTIONS}
+  />
+</div>
+</div>
 
       {actionError && <p className="text-sm text-red-600">{actionError}</p>}
 
@@ -138,8 +172,9 @@ const QuestionsPage = () => {
   />
 
   {data?.pages > 1 && (
-    <div className="flex items-center justify-center gap-3">
+    <div className="flex  items-center justify-center gap-3">
       <Button
+        className="w-100"
         onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
         disabled={currentPage === 1}
       >
@@ -173,6 +208,7 @@ const QuestionsPage = () => {
      </Button>
 
       <Button
+        className="w-100"
         onClick={() =>
           setCurrentPage((prev) => Math.min(prev + 1, data?.pages))
         }

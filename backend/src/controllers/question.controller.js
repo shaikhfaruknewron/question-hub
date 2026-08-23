@@ -9,10 +9,11 @@ export const createQuestion = asyncHandler(async (req, res) => {S
 });
 
 export const getQuestions = asyncHandler(async (req, res) => {
-  const { category, difficulty, type, tag, search, page = 1, limit = 20 } = req.query;
+  const { category, topic, difficulty, type,  tag, search, page = 1, limit = 20 } = req.query;
 
   const filter = { isActive: true };
   if (category) filter.category = category;
+  if (topic) filter.topic = topic;
   if (difficulty) filter.difficulty = difficulty;
   if (type) filter.type = type;
   if (tag) filter.tags = tag;

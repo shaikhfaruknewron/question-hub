@@ -13,6 +13,8 @@ const testSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
+    class: {type: mongoose.Schema.Types.ObjectId,ref: "Class",required: true, },
+    subject: {type: mongoose.Schema.Types.ObjectId,ref: "Subject",required: true,},
     questions: [testQuestionSchema],
     durationMinutes: { type: Number, required: true },
     passingScore: { type: Number, required: true },

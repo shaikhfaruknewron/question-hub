@@ -1,21 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState , useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import Input from "@/src/components/ui/Input";
 import Select from "@/src/components/ui/Select";
 import Button from "@/src/components/ui/Button";
 import { QUESTION_TYPES, DIFFICULTY_LEVELS } from "@/src/utils/constants";
+import { getSubjects } from "@/src/utils/api";
 
 const emptyOption = () => ({ text: "", isCorrect: false });
 
 const CHOICE_TYPES = ["single-choice", "multiple-choice", "true-false"];
 
-const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting = false, error = "" }) => {
+const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting = false, error = "", }) => {
   const [form, setForm] = useState({
     title: initialValues?.title || "",
     type: initialValues?.type || "single-choice",
     category: initialValues?.category?._id || initialValues?.category || "",
+    subject:initialValues?.subject?._id ||initialValues?.subject || "",
     difficulty: initialValues?.difficulty || "medium",
     marks: initialValues?.marks ?? 1,
     negativeMarks: initialValues?.negativeMarks ?? 0,
@@ -25,6 +27,28 @@ const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting = fals
     explanation: initialValues?.explanation || "",
   });
   const [validationError, setValidationError] = useState("");
+  const [subjects, setSubjects] = useState([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true); 
+
+  useEffect(() => {
+  const loadSubjects = async () => {
+    try {
+      setIsLoadingSubjects(true);
+
+      const data = await getSubjects();
+
+      setSubjects(data?.subjects || data || []);
+    } catch (err) {
+      setValidationError(
+        err.message || "Failed to load subjects."
+      );
+    } finally {
+      setIsLoadingSubjects(false);
+    }
+  };
+
+  loadSubjects();
+}, []);
 
   const updateField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -59,11 +83,16 @@ const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting = fals
       setValidationError("Pick a category first — create one if the list is empty.");
       return;
     }
+    if (!form.subject) {
+    setValidationError("Select a subject first.");
+    return;
+    }
 
     const payload = {
       title: form.title,
       type: form.type,
       category: form.category,
+      subject: form.subject,
       difficulty: form.difficulty,
       marks: Number(form.marks),
       negativeMarks: Number(form.negativeMarks),
@@ -100,24 +129,57 @@ const QuestionForm = ({ initialValues, categories, onSubmit, isSubmitting = fals
         required
       />
 
-      <div className="grid grid-cols-2 gap-4">
-        <Select
-          id="type"
-          label="Question type"
-          value={form.type}
-          onChange={(e) => updateField("type", e.target.value)}
-          options={QUESTION_TYPES}
-        />
-        <Select
-          id="category"
-          label="Category"
-          value={form.category}
-          onChange={(e) => updateField("category", e.target.value)}
-          placeholder={categories.length ? "Select a category" : "No categories yet"}
-          options={categories.map((c) => ({ value: c._id, label: c.name }))}
-          required
-        />
-      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+  <Select
+    id="type"
+    label="Question type"
+    value={form.type}
+    onChange={(e) =>
+      updateField("type", e.target.value)
+    }
+    options={QUESTION_TYPES}
+  />
+
+  <Select
+    id="category"
+    label="Category"
+    value={form.category}
+    onChange={(e) =>
+      updateField("category", e.target.value)
+    }
+    placeholder={
+      categories.length
+        ? "Select a category"
+        : "No categories yet"
+    }
+    options={categories.map((c) => ({
+      value: c._id,
+      label: c.name,
+    }))}
+    required
+  />
+
+  <Select
+    id="subject"
+    label="Subject"
+    value={form.subject}
+    onChange={(e) =>
+      updateField("subject", e.target.value)
+    }
+    placeholder={
+      isLoadingSubjects
+        ? "Loading subjects..."
+        : subjects.length
+          ? "Select a subject"
+          : "No subjects yet"
+    }
+    options={subjects.map((subject) => ({
+      value: subject._id,
+      label: `${subject.name} (${subject.code})`,
+    }))}
+    required
+  />
+</div>
 
       <div className="grid grid-cols-3 gap-4">
         <Select

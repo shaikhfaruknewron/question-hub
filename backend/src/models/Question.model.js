@@ -22,6 +22,7 @@ const questionSchema = new mongoose.Schema(
       required: true,
     },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
+    topic: {type: String,required: true,trim: true,},
     tags: [{ type: String, trim: true }],
     difficulty: {
       type: String,
@@ -61,6 +62,6 @@ const questionSchema = new mongoose.Schema(
 // index cannot have an array in its non-text field, which rejects every tagged question.
 questionSchema.index({ title: "text", tags: "text" });
 questionSchema.index({ tags: 1 });
-questionSchema.index({ category: 1, difficulty: 1, type: 1 });
+questionSchema.index({subject:1, category: 1, difficulty: 1, type: 1 });
 
 export default mongoose.model("Question", questionSchema);

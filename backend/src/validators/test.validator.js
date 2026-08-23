@@ -11,6 +11,8 @@ const testQuestionSchema = z.object({
 const testShape = z.object({
   title: z.string().min(3),
   description: z.string().optional(),
+  class:objectId,
+  subject:objectId,
   questions: z.array(testQuestionSchema).min(1, "Select at least one question"),
   durationMinutes: z.number().positive(),
   passingScore: z.number().min(0),
