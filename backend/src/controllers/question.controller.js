@@ -3,7 +3,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import Question from "../models/Question.model.js";
 
-export const createQuestion = asyncHandler(async (req, res) => {S
+export const createQuestion = asyncHandler(async (req, res) => {
   const question = await Question.create({ ...req.body, createdBy: req.user._id });
   res.status(201).json(new ApiResponse(201, question, "Question created"));
 });

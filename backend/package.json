@@ -10,7 +10,8 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "seed": "node src/seed.js",
-    "seed:questions": "node src/seeds/questions.seed.js"
+    "seed:questions": "node src/seeds/questions.seed.js",
+    "backfill:topics": "node src/seeds/backfillQuestionTopics.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

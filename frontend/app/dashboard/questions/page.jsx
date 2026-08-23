@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState , useEffect } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -13,7 +13,7 @@ import QuestionList from "@/src/components/questions/QuestionList";
 import useAuth from "@/src/hooks/useAuth";
 import useFetch from "@/src/hooks/useFetch";
 import { api} from "@/src/utils/api";
-import { DIFFICULTY_LEVELS, QUESTION_TYPES } from "@/src/utils/constants";
+import { DIFFICULTY_LEVELS, QUESTION_TYPES, QUESTION_TOPICS } from "@/src/utils/constants";
 
 
 const DIFFICULTY_OPTIONS = [
@@ -23,20 +23,7 @@ const DIFFICULTY_OPTIONS = [
 
 const TYPE_OPTIONS = [{ value: "", label: "All types" }, ...QUESTION_TYPES];
 
-const TOPIC_OPTIONS = [
-  { value: "", label: "All topics" },
-  { value: "databases", label: "Databases" },
-  { value: "git", label: "Git" },
-  { value: "javascript", label: "JavaScript" },
-  { value: "dataStructures", label: "DSA" },
-  { value: "index", label: "index" },
-  { value: "networking", label: "Networking" },
-  { value: "nodejs", label: "Nodejs" },
-  { value: "operatingSystems", label: "OS" },
-  { value: "python", label: "Python" },
-  { value: "react", label: "React" },
-  { value: "webFundamentals", label: "Web" },
-];
+const TOPIC_OPTIONS = [{ value: "", label: "All topics" }, ...QUESTION_TOPICS];
 
 const QuestionsPage = () => {
   const router = useRouter();
@@ -47,13 +34,6 @@ const QuestionsPage = () => {
   const [actionError, setActionError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 12;
-  
-  
-
-  useEffect(() => {
-  setPageInput(String(currentPage));
-}, [currentPage]);
-
   const [pageInput, setPageInput] = useState("1");
 
   const endpoint = useMemo(() => {
@@ -73,21 +53,21 @@ const QuestionsPage = () => {
 
   const canManage = user?.role === "admin" || user?.role === "teacher";
 
+  const changePage = (page) => {
+    setCurrentPage(page);
+    setPageInput(String(page));
+  };
+
   const goToPage = () => {
-  const page = Number(pageInput);
+    const page = Number(pageInput);
 
-  if (!Number.isInteger(page)) {
-    setPageInput(String(currentPage));
-    return;
-  }
+    if (!Number.isInteger(page) || page < 1 || page > (data?.pages || 1)) {
+      setPageInput(String(currentPage));
+      return;
+    }
 
-  if (page < 1 || page > (data?.pages || 1)) {
-    setPageInput(String(currentPage));
-    return;
-  }
-
-  setCurrentPage(page);
-};
+    changePage(page);
+  };
 
   const handleEdit = (id) => router.push(`/dashboard/questions/${id}`);
 
@@ -122,7 +102,7 @@ const QuestionsPage = () => {
       value={difficulty}
       onChange={(e) => {
         setDifficulty(e.target.value);
-        setCurrentPage(1);
+        changePage(1);
       }}
       options={DIFFICULTY_OPTIONS}
     />
@@ -134,7 +114,7 @@ const QuestionsPage = () => {
       value={type}
       onChange={(e) => {
         setType(e.target.value);
-        setCurrentPage(1);
+        changePage(1);
       }}
       options={TYPE_OPTIONS}
     />
@@ -145,7 +125,7 @@ const QuestionsPage = () => {
     value={topic}
     onChange={(e) => {
       setTopic(e.target.value);
-      setCurrentPage(1);
+      changePage(1);
     }}
     options={TOPIC_OPTIONS}
   />
@@ -175,7 +155,7 @@ const QuestionsPage = () => {
     <div className="flex  items-center justify-center gap-3">
       <Button
         className="w-100"
-        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+        onClick={() => changePage(Math.max(currentPage - 1, 1))}
         disabled={currentPage === 1}
       >
         Previous
@@ -209,9 +189,7 @@ const QuestionsPage = () => {
 
       <Button
         className="w-100"
-        onClick={() =>
-          setCurrentPage((prev) => Math.min(prev + 1, data?.pages))
-        }
+        onClick={() => changePage(Math.min(currentPage + 1, data?.pages || 1))}
         disabled={currentPage === data?.pages}
       >
         Next

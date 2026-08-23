@@ -147,13 +147,13 @@ const buildCodingQuestion = (concept, bank) => ({
 });
 
 const buildConceptQuestions = (concept, index, bank) => {
-   const shared = {
-     category: bank.categoryId,
-     topic: concept.term,
-     tags: [bank.tag, ...concept.tags],
-     createdBy: bank.createdBy,
-     isActive: true,
- };
+  const shared = {
+    category: bank.categoryId,
+    topic: bank.topic,
+    tags: [bank.topic, ...concept.tags],
+    createdBy: bank.createdBy,
+    isActive: true,
+  };
 
   const forms = [
     buildDefinitionQuestion(concept, index, bank),

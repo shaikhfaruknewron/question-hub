@@ -21,3 +21,18 @@ export const QUESTION_DIFFICULTIES = {
 };
 
 export const QUESTION_DIFFICULTY_VALUES = Object.values(QUESTION_DIFFICULTIES);
+
+export const QUESTION_TOPICS = {
+  JAVASCRIPT: "javascript",
+  DATABASES: "databases",
+  REACT: "react",
+  NODEJS: "nodejs",
+  DSA: "dsa",
+  NETWORKING: "networking",
+  OPERATING_SYSTEMS: "operating-systems",
+  PYTHON: "python",
+  WEB_FUNDAMENTALS: "web-fundamentals",
+  GIT: "git",
+};
+
+export const QUESTION_TOPIC_VALUES = Object.values(QUESTION_TOPICS);
