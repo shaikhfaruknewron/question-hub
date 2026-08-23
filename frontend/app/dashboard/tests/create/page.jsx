@@ -10,10 +10,12 @@ import useFetch from "@/src/hooks/useFetch";
 import DateTimePicker from "@/src/components/tests/DateTimePicker";
 import { api } from "@/src/utils/api";
 import { getClasses, getClassSubjects } from "@/src/utils/api";
+import { QUESTION_TOPICS } from "@/src/utils/constants";
+
+const QUESTION_FETCH_LIMIT = 250;
 
 const CreateTestPage = () => {
   const router = useRouter();
-  const { data: questionsData, isLoading } = useFetch("/questions?limit=100");
   const [form, setForm] = useState({
   title: "",
   description: "",
@@ -38,6 +40,14 @@ const CreateTestPage = () => {
   const [isLoadingAcademicData, setIsLoadingAcademicData] = useState(true);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
   const [selectedTag, setSelectedTag] = useState("");
+
+  const questionsEndpoint = useMemo(() => {
+    const params = new URLSearchParams({ limit: String(QUESTION_FETCH_LIMIT) });
+    if (topicFilter) params.set("topic", topicFilter);
+    return `/questions?${params.toString()}`;
+  }, [topicFilter]);
+
+  const { data: questionsData, isLoading } = useFetch(questionsEndpoint);
 
   useEffect(() => {
   const loadClasses = async () => {
@@ -174,19 +184,7 @@ if (
 
   const questions = questionsData?.questions || [];
 
-  const availableTopics = useMemo(() => {
-    return [...new Set(questions.map((question) => question.topic).filter(Boolean))].sort(
-      (firstTopic, secondTopic) => firstTopic.localeCompare(secondTopic)
-    );
-  }, [questions]);
-
-  const filteredQuestions = useMemo(
-    () =>
-      topicFilter
-        ? questions.filter((question) => question.topic === topicFilter)
-        : questions,
-    [questions, topicFilter]
-  );
+  const totalAvailable = questionsData?.total ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -393,9 +391,9 @@ if (
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               >
                 <option value="">All topics</option>
-                {availableTopics.map((topic) => (
-                  <option key={topic} value={topic}>
-                    {topic}
+                {QUESTION_TOPICS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>
@@ -405,15 +403,13 @@ if (
             <Spinner />
           ) : questions.length === 0 ? (
             <p className="text-sm text-gray-500">
-              No questions available. Create some questions first.
-            </p>
-          ) : filteredQuestions.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              No questions found for this topic.
+              {topicFilter
+                ? "No questions found for this topic."
+                : "No questions available. Create some questions first."}
             </p>
           ) : (
             <div className="flex max-h-80 flex-col gap-2 overflow-y-auto">
-              {filteredQuestions.map((question) => (
+              {questions.map((question) => (
                 <label
                   key={question._id}
                   className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 text-sm"
@@ -428,6 +424,11 @@ if (
                 </label>
               ))}
             </div>
+          )}
+          {questions.length > 0 && totalAvailable > questions.length && (
+            <p className="mt-2 text-xs text-gray-500">
+              Showing {questions.length} of {totalAvailable}. Filter by topic to narrow the list.
+            </p>
           )}
         </Card>
 
