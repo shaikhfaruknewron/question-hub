@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState , useEffect } from "react";
+import { useMemo, useState , useEffect ,useRef} from "react";
 import { useRouter } from "next/navigation";
 import Card from "@/src/components/ui/Card";
 import Input from "@/src/components/ui/Input";
@@ -12,7 +12,7 @@ import { api } from "@/src/utils/api";
 import { getClasses, getClassSubjects } from "@/src/utils/api";
 import { QUESTION_TOPICS } from "@/src/utils/constants";
 
-const QUESTION_FETCH_LIMIT = 250;
+const QUESTION_FETCH_LIMIT = 12;
 
 const CreateTestPage = () => {
   const router = useRouter();
@@ -39,33 +39,55 @@ const CreateTestPage = () => {
   const [subjects, setSubjects] = useState([]);
   const [isLoadingAcademicData, setIsLoadingAcademicData] = useState(true);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
-  const [selectedTag, setSelectedTag] = useState("");
+  const [questionPage, setQuestionPage] = useState(1);
+  const [questions, setQuestions] = useState([]);
+  const isFirstTopicRender = useRef(true);
 
   const questionsEndpoint = useMemo(() => {
-    const params = new URLSearchParams({ limit: String(QUESTION_FETCH_LIMIT) });
-    if (topicFilter) params.set("topic", topicFilter);
-    return `/questions?${params.toString()}`;
-  }, [topicFilter]);
+  const params = new URLSearchParams({
+    page: String(questionPage),
+    limit: String(QUESTION_FETCH_LIMIT),
+  });
+
+  if (topicFilter) {
+    params.set("topic", topicFilter);
+  }
+
+  return `/questions?${params.toString()}`;
+}, [topicFilter, questionPage]);
 
   const { data: questionsData, isLoading } = useFetch(questionsEndpoint);
 
   useEffect(() => {
-  const loadClasses = async () => {
-    try {
-      setIsLoadingAcademicData(true);
+  if (!questionsData?.questions) return;
 
-      const classesData = await getClasses();
+  if (questionPage === 1) {
+    setQuestions(questionsData.questions);
+  } else {
+    setQuestions((prevQuestions) => {
+      const existingIds = new Set(
+        prevQuestions.map((question) => question._id)
+      );
 
-      setClasses(classesData?.classes || classesData || []);
-    } catch (err) {
-      setError(err.message || "Failed to load classes");
-    } finally {
-      setIsLoadingAcademicData(false);
-    }
-  };
+      const newQuestions = questionsData.questions.filter(
+        (question) => !existingIds.has(question._id)
+      );
 
-  loadClasses();
-}, []);
+      return [...prevQuestions, ...newQuestions];
+    });
+  }
+}, [questionsData, questionPage]);
+
+
+  useEffect(() => {
+  if (isFirstTopicRender.current) {
+    isFirstTopicRender.current = false;
+    return;
+  }
+
+  setQuestionPage(1);
+  setQuestions([]);
+}, [topicFilter]);
 
 useEffect(() => {
   const loadSubjects = async () => {
@@ -181,8 +203,6 @@ if (
     }
   };
 
-
-  const questions = questionsData?.questions || [];
 
   const totalAvailable = questionsData?.total ?? 0;
 
@@ -399,7 +419,7 @@ if (
               </select>
             </div>
           </div>
-          {isLoading ? (
+          {isLoading && questions.length === 0 ? (
             <Spinner />
           ) : questions.length === 0 ? (
             <p className="text-sm text-gray-500">
@@ -425,10 +445,23 @@ if (
               ))}
             </div>
           )}
-          {questions.length > 0 && totalAvailable > questions.length && (
-            <p className="mt-2 text-xs text-gray-500">
-              Showing {questions.length} of {totalAvailable}. Filter by topic to narrow the list.
-            </p>
+
+            {questions.length > 0 && questions.length< totalAvailable && (
+  <div className="mt-3 flex justify-center">
+    <Button
+      type="button"
+      onClick={() => setQuestionPage((prev) => prev + 1)}
+      disabled={isLoading}
+    >
+      {isLoading ? "Loading..." : "Load More"}
+    </Button>
+  </div>
+)}
+          
+          {questions.length > 0 && (
+          <p className="mt-2 text-xs text-gray-500">
+          Showing {questions.length} of {totalAvailable} questions.
+          </p>
           )}
         </Card>
 
