@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState ,useEffect} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -33,8 +33,8 @@ const QuestionsPage = () => {
   const [topic, setTopic] = useState("");
   const [actionError, setActionError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [questions, setQuestions] = useState([]);
   const limit = 12;
-  const [pageInput, setPageInput] = useState("1");
 
   const endpoint = useMemo(() => {
   const params = new URLSearchParams({
@@ -51,22 +51,30 @@ const QuestionsPage = () => {
 
   const { data, isLoading, error, refetch } = useFetch(endpoint);
 
+  useEffect(() => {
+  if (!data?.questions) return;
+
+  if (currentPage === 1) {
+    setQuestions(data.questions);
+  } else {
+    setQuestions((prevQuestions) => {
+      const existingIds = new Set(
+        prevQuestions.map((question) => question._id)
+      );
+
+      const newQuestions = data.questions.filter(
+        (question) => !existingIds.has(question._id)
+      );
+
+      return [...prevQuestions, ...newQuestions];
+    });
+  }
+}, [data, currentPage]);
+
   const canManage = user?.role === "admin" || user?.role === "teacher";
 
   const changePage = (page) => {
     setCurrentPage(page);
-    setPageInput(String(page));
-  };
-
-  const goToPage = () => {
-    const page = Number(pageInput);
-
-    if (!Number.isInteger(page) || page < 1 || page > (data?.pages || 1)) {
-      setPageInput(String(currentPage));
-      return;
-    }
-
-    changePage(page);
   };
 
   const handleEdit = (id) => router.push(`/dashboard/questions/${id}`);
@@ -79,6 +87,12 @@ const QuestionsPage = () => {
     } catch (err) {
       setActionError(err.message);
     }
+  };
+
+  const resetAndChangeFilter = (setter, value) => {
+  setter(value);
+  setCurrentPage(1);
+  setQuestions([]);
   };
 
   return (
@@ -101,9 +115,8 @@ const QuestionsPage = () => {
       id="difficulty-filter"
       value={difficulty}
       onChange={(e) => {
-        setDifficulty(e.target.value);
-        changePage(1);
-      }}
+        resetAndChangeFilter(setDifficulty, e.target.value)
+        }}
       options={DIFFICULTY_OPTIONS}
     />
   </div>
@@ -113,8 +126,7 @@ const QuestionsPage = () => {
       id="type-filter"
       value={type}
       onChange={(e) => {
-        setType(e.target.value);
-        changePage(1);
+       resetAndChangeFilter(setType, e.target.value)
       }}
       options={TYPE_OPTIONS}
     />
@@ -124,8 +136,7 @@ const QuestionsPage = () => {
     id="topic-filter"
     value={topic}
     onChange={(e) => {
-      setTopic(e.target.value);
-      changePage(1);
+      resetAndChangeFilter(setTopic, e.target.value)
     }}
     options={TOPIC_OPTIONS}
   />
@@ -134,70 +145,35 @@ const QuestionsPage = () => {
 
       {actionError && <p className="text-sm text-red-600">{actionError}</p>}
 
-      {isLoading ? (
-        <Spinner />
-      ) : error ? (
-        <p className="text-sm text-red-600">{error}</p>
-      ) : (
-        <>
-  <p className="text-xs text-gray-500">
-    {data?.total ?? 0} question(s)
-  </p>
+      {isLoading && questions.length === 0 ? (
+  <Spinner />
+) : error ? (
+  <p className="text-sm text-red-600">{error}</p>
+) : (
+  <>
+    <p className="text-xs text-gray-500">
+      {data?.total ?? 0} question(s)
+    </p>
 
-  <QuestionList
-    questions={data?.questions || []}
-    canManage={canManage}
-    onEdit={handleEdit}
-    onDelete={handleDelete}
-  />
+    <QuestionList
+      questions={questions}
+      canManage={canManage}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+    />
 
-  {data?.pages > 1 && (
-    <div className="flex  items-center justify-center gap-3">
-      <Button
-        className="w-100"
-        onClick={() => changePage(Math.max(currentPage - 1, 1))}
-        disabled={currentPage === 1}
-      >
-        Previous
-      </Button>
-
-      <span className="text-sm text-gray-600">
-        Page
-      </span>
-      
-      <Input
-      id="page-input"
-      type="number"
-      min="1"
-      max={data?.pages}
-      value={pageInput}
-      onChange={(e) => setPageInput(e.target.value)}
-      onKeyDown={(e) => {
-      if (e.key === "Enter") {
-        goToPage();
-      }
-      }}
-     />
-
-     <span className="text-sm text-gray-600">
-    of {data?.pages}
-    </span>
-
-     <Button onClick={goToPage}>
-      Go
-     </Button>
-
-      <Button
-        className="w-100"
-        onClick={() => changePage(Math.min(currentPage + 1, data?.pages || 1))}
-        disabled={currentPage === data?.pages}
-      >
-        Next
-      </Button>
-    </div>
-  )}
-</>
-      )}
+    {currentPage < (data?.pages || 1) && (
+      <div className="flex justify-center">
+        <Button
+          onClick={() => changePage(currentPage + 1)}
+          disabled={isLoading}
+        >
+          {isLoading ? "Loading..." : "Load More"}
+        </Button>
+      </div>
+    )}
+  </>
+)}
     </div>
   );
 };
