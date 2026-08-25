@@ -90,6 +90,35 @@ const CreateTestPage = () => {
   setQuestions([]);
 }, [topicFilter]);
 
+
+useEffect(() => {
+  const loadClasses = async () => {
+    try {
+      setIsLoadingAcademicData(true);
+
+      const classesData = await getClasses();
+
+      console.log("Classes response:", classesData);
+
+      const classList =
+        classesData?.classes ||
+        classesData?.data ||
+        classesData ||
+        [];
+
+      setClasses(Array.isArray(classList) ? classList : []);
+    } catch (err) {
+      console.error("Failed to load classes:", err);
+      setClasses([]);
+      setError(err.message || "Failed to load classes");
+    } finally {
+      setIsLoadingAcademicData(false);
+    }
+  };
+
+  loadClasses();
+}, []);
+
 useEffect(() => {
   const loadSubjects = async () => {
     if (!form.class) {

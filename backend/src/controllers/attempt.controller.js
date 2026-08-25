@@ -3,8 +3,68 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import Test from "../models/Test.model.js";
 import TestAttempt from "../models/TestAttempt.model.js";
+import User from "../models/User.model.js";
+import ClassSubjectTeacher from "../models/classSubjectTeacher.model.js";
 import { gradeAttempt, MANUAL_TYPES } from "../services/grading.service.js";
 import shuffleArray from "../utils/shuffle.js";
+
+const assertStudentCanAccessTest = async (test, user) => {
+  if (user.role !== "student") {
+    throw new ApiError(403, "Only students can take tests");
+  }
+
+  if (!test || test.visibility !== "published") {
+    throw new ApiError(404, "Test not available");
+  }
+
+  const student = await User.findById(user._id).select("class");
+  const isAssigned = !test.assignedTo?.length || test.assignedTo.some(
+    (studentId) => studentId.toString() === user._id.toString()
+  );
+
+  if (!student?.class || test.class.toString() !== student.class.toString() || !isAssigned) {
+    throw new ApiError(404, "Test not available");
+  }
+};
+
+const hasExpired = (attempt, test, now = new Date()) =>
+  Boolean(
+    (test.scheduledEnd && now > test.scheduledEnd) ||
+      now >= new Date(attempt.startedAt).getTime() + test.durationMinutes * 60 * 1000
+  );
+
+const expireAttemptIfNeeded = async (attempt, test, now = new Date()) => {
+  if (attempt.status === "in-progress" && hasExpired(attempt, test, now)) {
+    attempt.status = "expired";
+    attempt.submittedAt = now;
+    await attempt.save();
+  }
+  return attempt;
+};
+
+const assertTestIsOpen = (test, now = new Date()) => {
+  if (test.scheduledStart && now < test.scheduledStart) {
+    throw new ApiError(403, "This test has not opened yet");
+  }
+  if (test.scheduledEnd && now > test.scheduledEnd) {
+    throw new ApiError(403, "This test has closed");
+  }
+};
+
+const assertStaffCanAccessTest = async (test, user) => {
+  if (!test) throw new ApiError(404, "Test not found");
+  if (user.role === "admin") return;
+  if (user.role !== "teacher") throw new ApiError(403, "You do not have permission to view results");
+
+  const assignment = await ClassSubjectTeacher.findOne({
+    class: test.class,
+    subject: test.subject,
+    teacher: user._id,
+  });
+  if (!assignment) {
+    throw new ApiError(403, "You are not assigned to this test's class and subject");
+  }
+};
 
 // Never send `isCorrect` to the person taking the test.
 const toStudentQuestion = (question, marks, shuffleOptions) => {
@@ -32,17 +92,9 @@ const toStudentQuestion = (question, marks, shuffleOptions) => {
 
 export const startAttempt = asyncHandler(async (req, res) => {
   const test = await Test.findById(req.params.testId).populate("questions.question");
-  if (!test || test.visibility !== "published") {
-    throw new ApiError(404, "Test not available");
-  }
-
+  await assertStudentCanAccessTest(test, req.user);
   const now = new Date();
-  if (test.scheduledStart && now < test.scheduledStart) {
-    throw new ApiError(403, "This test has not opened yet");
-  }
-  if (test.scheduledEnd && now > test.scheduledEnd) {
-    throw new ApiError(403, "This test has closed");
-  }
+  assertTestIsOpen(test, now);
 
   const validQuestions = test.questions.filter((tq) => tq.question);
   if (validQuestions.length === 0) {
@@ -56,6 +108,11 @@ export const startAttempt = asyncHandler(async (req, res) => {
     student: req.user._id,
     status: "in-progress",
   });
+
+  if (attempt) {
+    await expireAttemptIfNeeded(attempt, test, now);
+    attempt = attempt.status === "in-progress" ? attempt : null;
+  }
 
   if (!attempt) {
     const previousAttempts = await TestAttempt.countDocuments({
@@ -75,6 +132,11 @@ export const startAttempt = asyncHandler(async (req, res) => {
     });
   }
 
+  const remainingAttempts = Math.max(
+  test.maxAttempts - attempt.attemptNumber,
+  0
+);
+
   const ordered = test.shuffleQuestions ? shuffleArray(validQuestions) : validQuestions;
   const questions = ordered.map((tq) =>
     toStudentQuestion(tq.question, tq.marks, test.shuffleOptions)
@@ -88,6 +150,9 @@ export const startAttempt = asyncHandler(async (req, res) => {
       201,
       {
         attemptId: attempt._id,
+        attemptNumber: attempt.attemptNumber,
+        maxAttempts: test.maxAttempts,
+        remainingAttempts,
         durationMinutes: test.durationMinutes,
         secondsRemaining,
         savedAnswers: attempt.answers.map((a) => ({
@@ -108,9 +173,11 @@ export const submitAnswer = asyncHandler(async (req, res) => {
   if (!attempt || attempt.student.toString() !== req.user._id.toString()) {
     throw new ApiError(404, "Attempt not found");
   }
-  if (attempt.status !== "in-progress") {
-    throw new ApiError(400, "This attempt is no longer active");
-  }
+  const test = await Test.findById(attempt.test);
+  await assertStudentCanAccessTest(test, req.user);
+  assertTestIsOpen(test);
+  await expireAttemptIfNeeded(attempt, test);
+  if (attempt.status !== "in-progress") throw new ApiError(400, "This attempt is no longer active");
 
   const existing = attempt.answers.find((a) => a.question.toString() === req.body.question);
 
@@ -131,14 +198,11 @@ export const submitAttempt = asyncHandler(async (req, res) => {
   if (!attempt || attempt.student.toString() !== req.user._id.toString()) {
     throw new ApiError(404, "Attempt not found");
   }
-  if (attempt.status !== "in-progress") {
-    throw new ApiError(400, "This attempt has already been submitted");
-  }
-
   const test = await Test.findById(attempt.test);
-  if (!test) {
-    throw new ApiError(404, "Test not found");
-  }
+  await assertStudentCanAccessTest(test, req.user);
+  assertTestIsOpen(test);
+  await expireAttemptIfNeeded(attempt, test);
+  if (attempt.status !== "in-progress") throw new ApiError(400, "This attempt has already been submitted");
 
   attempt.submittedAt = new Date();
   await gradeAttempt(attempt, test);
@@ -163,7 +227,7 @@ export const submitAttempt = asyncHandler(async (req, res) => {
 
 export const gradeManualAnswer = asyncHandler(async (req, res) => {
   const { attemptId, questionId } = req.params;
-  const { marksAwarded, isCorrect } = req.body;
+  const { marksAwarded, isCorrect, feedback } = req.body;
 
   if (typeof marksAwarded !== "number" || Number.isNaN(marksAwarded)) {
     throw new ApiError(400, "marksAwarded must be a number");
@@ -173,6 +237,9 @@ export const gradeManualAnswer = asyncHandler(async (req, res) => {
   if (!attempt) {
     throw new ApiError(404, "Attempt not found");
   }
+
+  const test = await Test.findById(attempt.test).populate("questions.question", "type");
+  await assertStaffCanAccessTest(test, req.user);
   if (attempt.status === "in-progress") {
     throw new ApiError(400, "This attempt has not been submitted yet");
   }
@@ -182,11 +249,21 @@ export const gradeManualAnswer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Answer not found");
   }
 
+  const testQuestion = test.questions.find(
+    (item) => item.question && item.question._id.toString() === questionId
+  );
+  if (!testQuestion || !MANUAL_TYPES.includes(testQuestion.question.type)) {
+    throw new ApiError(400, "Only descriptive and coding answers can be graded manually");
+  }
+  if (marksAwarded > testQuestion.marks) {
+    throw new ApiError(400, `Marks cannot exceed the question maximum (${testQuestion.marks})`);
+  }
+
   answer.marksAwarded = marksAwarded;
   answer.isCorrect = typeof isCorrect === "boolean" ? isCorrect : marksAwarded > 0;
+  if (feedback !== undefined) answer.feedback = feedback;
   answer.reviewedBy = req.user._id;
 
-  const test = await Test.findById(attempt.test).populate("questions.question", "type");
   const manualQuestionIds = new Set(
     test.questions
       .filter((tq) => tq.question && MANUAL_TYPES.includes(tq.question.type))
@@ -223,9 +300,27 @@ export const getMyAttempts = asyncHandler(async (req, res) => {
 });
 
 export const getAttemptsForTest = asyncHandler(async (req, res) => {
+  const test = await Test.findById(req.params.testId).select("class subject");
+  await assertStaffCanAccessTest(test, req.user);
+
   const attempts = await TestAttempt.find({ test: req.params.testId })
     .populate("student", "name email")
     .sort({ createdAt: -1 });
 
   res.status(200).json(new ApiResponse(200, attempts, "Attempts fetched"));
+});
+
+export const getAttemptById = asyncHandler(async (req, res) => {
+  const attempt = await TestAttempt.findById(req.params.attemptId)
+    .populate("student", "name email")
+    .populate({
+      path: "test",
+      select: "title totalMarks passingScore class subject questions",
+      populate: { path: "questions.question", select: "title type" },
+    });
+
+  if (!attempt) throw new ApiError(404, "Attempt not found");
+  await assertStaffCanAccessTest(attempt.test, req.user);
+
+  res.status(200).json(new ApiResponse(200, attempt, "Attempt fetched"));
 });

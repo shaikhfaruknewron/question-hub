@@ -47,3 +47,9 @@ export const submitAnswerSchema = z.object({
   codeAnswer: z.string().optional(),
   timeSpentSeconds: z.number().min(0).optional(),
 });
+
+export const gradeManualAnswerSchema = z.object({
+  marksAwarded: z.number().finite().min(0),
+  isCorrect: z.boolean().optional(),
+  feedback: z.string().max(5000).optional(),
+});

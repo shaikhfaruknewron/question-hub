@@ -27,6 +27,9 @@ const hasResponse = (answer) =>
 
 const TestAttemptRunner = ({
   attemptId,
+  attemptNumber,
+  maxAttempts,
+  remainingAttempts,
   questions,
   secondsRemaining,
   savedAnswers,
@@ -42,20 +45,50 @@ const TestAttemptRunner = ({
 
   const currentQuestion = questions[currentIndex];
 
-  const handleSubmitTest = useCallback(async () => {
-    if (submittedRef.current) return;
-    submittedRef.current = true;
-    setIsSubmitting(true);
-    setError("");
-    try {
-      const result = await api.patch(`/attempts/${attemptId}/submit`);
-      onComplete(result.data);
-    } catch (err) {
-      submittedRef.current = false;
-      setError(err.message);
-      setIsSubmitting(false);
+   const saveAnswer = useCallback(
+    async (questionId, answer) => {
+      try {
+        await api.patch(`/attempts/${attemptId}/answer`, {
+          question: questionId,
+          selectedOptions: answer.selectedOptions,
+          textAnswer: answer.textAnswer,
+          codeAnswer: answer.codeAnswer,
+        });
+        setError("");
+      } catch (err) {
+        setError(`Could not save your answer: ${err.message}`);
+        throw err;
+      }
+    },
+    [attemptId]
+  );
+
+ const handleSubmitTest = useCallback(async () => {
+  if (submittedRef.current) return;
+
+  submittedRef.current = true;
+  setIsSubmitting(true);
+  setError("");
+
+  try {
+    // Save the latest answer currently shown on screen.
+    const currentAnswer = answers[currentQuestion.id];
+
+    if (currentAnswer && hasResponse(currentAnswer)) {
+      await saveAnswer(currentQuestion.id, currentAnswer);
     }
-  }, [attemptId, onComplete]);
+
+    // Now submit the complete attempt.
+    const result = await api.patch(`/attempts/${attemptId}/submit`);
+
+    onComplete(result.data);
+  } catch (err) {
+    submittedRef.current = false;
+    setError(err.message);
+    setIsSubmitting(false);
+  }
+}, [
+  answers, attemptId, currentQuestion, onComplete, saveAnswer,]);
 
   useEffect(() => {
     // One interval for the whole run; the tick reads from the state updater.
@@ -79,22 +112,7 @@ const TestAttemptRunner = ({
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   }, [secondsLeft]);
 
-  const saveAnswer = useCallback(
-    async (questionId, answer) => {
-      try {
-        await api.patch(`/attempts/${attemptId}/answer`, {
-          question: questionId,
-          selectedOptions: answer.selectedOptions,
-          textAnswer: answer.textAnswer,
-          codeAnswer: answer.codeAnswer,
-        });
-        setError("");
-      } catch (err) {
-        setError(`Could not save your answer: ${err.message}`);
-      }
-    },
-    [attemptId]
-  );
+ 
 
   const selectOption = (optionId) => {
     const isMulti = currentQuestion.type === "multiple-choice";
@@ -137,9 +155,16 @@ const TestAttemptRunner = ({
       <div className="flex-1">
         <Card className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
+            <div>
             <span className="text-sm font-medium text-gray-500">
               Question {currentIndex + 1} of {questions.length}
             </span>
+            <span className="text-xs text-gray-500">
+               Attempt {attemptNumber} of {maxAttempts} ·{" "}
+               {remainingAttempts} attempt
+               {remainingAttempts !== 1 ? "s" : ""} remaining
+             </span>
+             </div>
             <span
               aria-live="polite"
               className={`rounded-xl px-3 py-1 text-sm font-semibold ${

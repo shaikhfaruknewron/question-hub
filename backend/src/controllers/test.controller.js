@@ -7,6 +7,73 @@ import ClassSubjectTeacher from "../models/classSubjectTeacher.model.js";
 import { Class } from "../models/Class.model.js";
 import Subject from "../models/subject.model.js";
 import User from "../models/User.model.js";
+import TestAttempt from "../models/TestAttempt.model.js";
+
+const addStudentAttemptData = async (tests, studentId) => {
+  if (!tests.length) return [];
+
+  const testIds = tests.map((test) => test._id);
+  const attempts = await TestAttempt.find({ test: { $in: testIds }, student: studentId })
+    .select("test attemptNumber status score percentage passed startedAt submittedAt createdAt")
+    .sort({ createdAt: -1 })
+    .lean();
+  const attemptsByTest = new Map();
+
+  for (const attempt of attempts) {
+    const key = attempt.test.toString();
+    const current = attemptsByTest.get(key) || [];
+    current.push(attempt);
+    attemptsByTest.set(key, current);
+  }
+
+  const now = new Date();
+  return tests.map((testDocument) => {
+    const test = testDocument.toObject ? testDocument.toObject() : testDocument;
+    if (test.questions) {
+      test.questionCount = test.questions.length;
+      delete test.questions;
+    }
+    delete test.assignedTo;
+    const testAttempts = attemptsByTest.get(test._id.toString()) || [];
+    const activeAttempt = testAttempts.find((attempt) => attempt.status === "in-progress");
+    const latestAttempt = activeAttempt || testAttempts[0] || null;
+    const attemptsUsed = testAttempts.length;
+    const attemptsRemaining = Math.max(test.maxAttempts - attemptsUsed, 0);
+    const timeExpired = Boolean(
+      test.scheduledEnd && now > new Date(test.scheduledEnd)
+    );
+    const durationExpired = Boolean(
+      activeAttempt &&
+        now >= new Date(activeAttempt.startedAt).getTime() + test.durationMinutes * 60 * 1000
+    );
+
+    let studentStatus = "available";
+    if (test.scheduledStart && now < new Date(test.scheduledStart)) studentStatus = "upcoming";
+    else if (timeExpired || durationExpired) studentStatus = "expired";
+    else if (activeAttempt) studentStatus = "in-progress";
+    else if (attemptsRemaining === 0) studentStatus = "exhausted";
+    else if (latestAttempt) studentStatus = "completed";
+
+    return {
+      ...test,
+      attemptsUsed,
+      attemptsRemaining,
+      studentStatus,
+      currentAttempt: latestAttempt
+        ? {
+            _id: latestAttempt._id,
+            attemptNumber: latestAttempt.attemptNumber,
+            status: durationExpired ? "expired" : latestAttempt.status,
+            score: latestAttempt.score,
+            percentage: latestAttempt.percentage,
+            passed: latestAttempt.passed,
+            startedAt: latestAttempt.startedAt,
+            submittedAt: latestAttempt.submittedAt,
+          }
+        : null,
+    };
+  });
+};
 
 const assertQuestionsExist = async (questions) => {
   if (!questions) return;
@@ -147,11 +214,15 @@ export const getTests = asyncHandler(async (req, res) => {
     Test.countDocuments(filter),
   ]);
 
+  const payloadTests = req.user.role === "student"
+    ? await addStudentAttemptData(tests, req.user._id)
+    : tests;
+
   res.status(200).json(
     new ApiResponse(
       200,
       {
-        tests,
+            tests: payloadTests,
         total,
         page: Number(page),
         pages: Math.ceil(total / Number(limit)),
@@ -213,7 +284,7 @@ export const getTestById = asyncHandler(async (req, res) => {
     }
   }
 
-  const payload = test.toObject();
+  let payload = test.toObject();
 
   if (isStudent) {
     // Students should never receive question bodies
@@ -221,6 +292,7 @@ export const getTestById = asyncHandler(async (req, res) => {
 
     delete payload.questions;
     delete payload.assignedTo;
+    [payload] = await addStudentAttemptData([payload], req.user._id);
   }
 
   res.status(200).json(

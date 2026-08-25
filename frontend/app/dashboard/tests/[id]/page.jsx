@@ -18,6 +18,7 @@ const TestDetailPage = () => {
   const [actionError, setActionError] = useState("");
 
   const isStudent = user?.role === "student";
+  const isStaff = user?.role === "admin" || user?.role === "teacher";
 
   const handlePublish = async () => {
     setActionError("");
@@ -38,6 +39,9 @@ const TestDetailPage = () => {
   }
 
   const questionCount = test.questionCount ?? test.questions?.length ?? 0;
+  const attemptStatus = test.studentStatus;
+  const currentAttempt = test.currentAttempt;
+  const canStart = attemptStatus === "available" || attemptStatus === "completed";
 
   return (
     <div className="flex flex-col gap-6">
@@ -71,6 +75,22 @@ const TestDetailPage = () => {
             <span className="text-gray-500">Attempts allowed</span>
             <p className="font-medium">{test.maxAttempts}</p>
           </div>
+          {isStudent && (
+            <>
+              <div>
+                <span className="text-gray-500">Attempts used</span>
+                <p className="font-medium">{test.attemptsUsed}/{test.maxAttempts}</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Attempts remaining</span>
+                <p className="font-medium">{test.attemptsRemaining}</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Current status</span>
+                <p className="font-medium capitalize">{attemptStatus?.replace("-", " ")}</p>
+              </div>
+            </>
+          )}
         </div>
       </Card>
 
@@ -80,11 +100,29 @@ const TestDetailPage = () => {
         {!isStudent && test.visibility === "draft" && (
           <Button onClick={handlePublish}>Publish test</Button>
         )}
-        {isStudent && test.visibility === "published" && (
-          <Button onClick={() => router.push(`/dashboard/tests/${params.id}/attempt`)}>
-            Start attempt
+        {isStaff && (
+          <Button onClick={() => router.push(`/dashboard/tests/${params.id}/results`)}>
+            View results
           </Button>
         )}
+        {isStudent && attemptStatus === "in-progress" && (
+          <Button onClick={() => router.push(`/dashboard/tests/${params.id}/attempt`)}>Continue</Button>
+        )}
+        {isStudent && canStart && (
+          <Button onClick={() => router.push(`/dashboard/tests/${params.id}/attempt`)}>
+            {attemptStatus === "completed" ? "Start Again" : "Start"}
+          </Button>
+        )}
+        {isStudent && currentAttempt && currentAttempt.status !== "in-progress" && (
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/dashboard/tests/${params.id}/result`)}
+          >
+            View Result
+          </Button>
+        )}
+        {isStudent && attemptStatus === "exhausted" && <Button disabled>Attempts Exhausted</Button>}
+        {isStudent && attemptStatus === "expired" && <Button disabled>Expired</Button>}
         <Button variant="outline" onClick={() => router.push("/dashboard/tests")}>
           Back to tests
         </Button>

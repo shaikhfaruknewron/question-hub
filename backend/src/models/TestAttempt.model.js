@@ -8,6 +8,7 @@ const answerSchema = new mongoose.Schema(
     codeAnswer: { type: String, default: "" },
     isCorrect: { type: Boolean, default: null },
     marksAwarded: { type: Number, default: 0 },
+    feedback: { type: String, default: "", trim: true },
     timeSpentSeconds: { type: Number, default: 0 },
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   },

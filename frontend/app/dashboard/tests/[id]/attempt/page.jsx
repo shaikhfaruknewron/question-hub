@@ -80,6 +80,9 @@ const TestAttemptPage = () => {
   return (
     <TestAttemptRunner
       attemptId={attempt.attemptId}
+      attemptNumber={attempt.attemptNumber}
+      maxAttempts={attempt.maxAttempts}
+      remainingAttempts={attempt.remainingAttempts}
       questions={attempt.questions}
       secondsRemaining={attempt.secondsRemaining}
       savedAnswers={attempt.savedAnswers}
