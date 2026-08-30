@@ -1,10 +1,12 @@
 import app from "./src/app.js";
 import { connectDB, disconnectDB } from "./src/config/db.js";
+import { connectRedis } from "./src/config/redis.js";
 import { ENV } from "./src/config/env.js";
 
 const startServer = async () => {
   try {
     await connectDB();
+    await connectRedis();
   } catch (error) {
     console.error("[server] Failed to connect to MongoDB:", error.message);
 
@@ -25,6 +27,7 @@ const startServer = async () => {
         ].join("\n")
       );
     }
+
 
     process.exit(1);
   }
