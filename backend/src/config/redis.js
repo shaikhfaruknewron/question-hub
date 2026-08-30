@@ -28,3 +28,27 @@ export const connectRedis = async () => {
 };
 
 export default redisClient;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -36,16 +36,23 @@ export const getQuestions = asyncHandler(async (req, res) => {
     limit,
   })}`;
 
+  console.log(cacheKey, "cachekey");
+
   // 1. Check Redis first
   const cachedQuestions = await redisClient.get(cacheKey);
 
   if (cachedQuestions) {
     console.log("[redis] Questions served from cache");
 
+    res.set("X-Cache", "HIT");
+
     return res
       .status(200)
       .json(JSON.parse(cachedQuestions));
   }
+
+  // Cache miss
+  res.set("X-Cache", "MISS");
 
   // 2. Build MongoDB filter
   const filter = { isActive: true };
@@ -121,6 +128,7 @@ export const updateQuestion = asyncHandler(async (req, res) => {
   if (!question) {
     throw new ApiError(404, "Question not found");
   }
+  console.log("[question] Update controller called");
   await clearQuestionsCache();
   res.status(200).json(new ApiResponse(200, question, "Question updated"));
 });

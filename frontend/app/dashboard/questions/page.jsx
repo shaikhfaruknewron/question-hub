@@ -50,9 +50,11 @@ const QuestionsPage = () => {
 }, [ difficulty, type, topic, currentPage]);
 
   const { data, isLoading, error, refetch } = useFetch(endpoint);
+  console.log("abcd")
 
   useEffect(() => {
   if (!data?.questions) return;
+  console.log("abcd useEffect")
 
   if (currentPage === 1) {
     setQuestions(data.questions);

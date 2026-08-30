@@ -1,8 +1,8 @@
 import redisClient from "../config/redis.js";
 
-export const clearQuestionsCache = async () => {
+export const clearQuestionsCache = async (key="questions:*") => {
   try {
-    const keys = await redisClient.keys("questions:*");
+    const keys = await redisClient.keys(key);
 
     if (keys.length > 0) {
       await redisClient.del(keys);
