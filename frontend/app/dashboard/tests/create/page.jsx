@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState , useEffect ,useRef} from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Card from "@/src/components/ui/Card";
 import Input from "@/src/components/ui/Input";
 import Button from "@/src/components/ui/Button";
 import Spinner from "@/src/components/ui/Spinner";
-import useFetch from "@/src/hooks/useFetch";
+import usePaginatedFetch from "@/src/hooks/usePaginatedFetch";
 import DateTimePicker from "@/src/components/tests/DateTimePicker";
 import { api } from "@/src/utils/api";
 import { getClasses, getClassSubjects } from "@/src/utils/api";
@@ -40,9 +40,6 @@ const CreateTestPage = () => {
   const [isLoadingAcademicData, setIsLoadingAcademicData] = useState(true);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
   const [questionPage, setQuestionPage] = useState(1);
-  const [questions, setQuestions] = useState([]);
-  const isFirstTopicRender = useRef(true);
-  
 
   const questionsEndpoint = useMemo(() => {
   const params = new URLSearchParams({
@@ -57,38 +54,10 @@ const CreateTestPage = () => {
   return `/questions?${params.toString()}`;
 }, [topicFilter, questionPage]);
 
-  const { data: questionsData, isLoading } = useFetch(questionsEndpoint);
-
-  useEffect(() => {
-  if (!questionsData?.questions) return;
-
-  if (questionPage === 1) {
-    setQuestions(questionsData.questions);
-  } else {
-    setQuestions((prevQuestions) => {
-      const existingIds = new Set(
-        prevQuestions.map((question) => question._id)
-      );
-
-      const newQuestions = questionsData.questions.filter(
-        (question) => !existingIds.has(question._id)
-      );
-
-      return [...prevQuestions, ...newQuestions];
-    });
-  }
-}, [questionsData, questionPage]);
-
-
-  useEffect(() => {
-  if (isFirstTopicRender.current) {
-    isFirstTopicRender.current = false;
-    return;
-  }
-
-  setQuestionPage(1);
-  setQuestions([]);
-}, [topicFilter]);
+  const { items: questions, data: questionsData, isLoading } = usePaginatedFetch(
+    questionsEndpoint,
+    { page: questionPage, itemsKey: "questions" }
+  );
 
 
 useEffect(() => {
@@ -437,7 +406,10 @@ if (
               <select
                 id="question-topic-filter"
                 value={topicFilter}
-                onChange={(event) => setTopicFilter(event.target.value)}
+                onChange={(event) => {
+                  setTopicFilter(event.target.value);
+                  setQuestionPage(1);
+                }}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               >
                 <option value="">All topics</option>

@@ -36,8 +36,6 @@ export const getQuestions = asyncHandler(async (req, res) => {
     limit,
   })}`;
 
-  console.log(cacheKey, "cachekey");
-
   // 1. Check Redis first
   const cachedQuestions = await redisClient.get(cacheKey);
 
@@ -128,7 +126,6 @@ export const updateQuestion = asyncHandler(async (req, res) => {
   if (!question) {
     throw new ApiError(404, "Question not found");
   }
-  console.log("[question] Update controller called");
   await clearQuestionsCache();
   res.status(200).json(new ApiResponse(200, question, "Question updated"));
 });

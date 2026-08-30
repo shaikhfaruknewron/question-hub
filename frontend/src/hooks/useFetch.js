@@ -16,20 +16,22 @@ const useFetch = (endpoint) => {
   useEffect(() => {
     if (!key) return undefined;
 
-    // Ignore a response that arrives after the endpoint changed or we unmounted.
+    const controller = new AbortController();
     let active = true;
 
     api
-      .get(endpoint)
+      .get(endpoint, { signal: controller.signal })
       .then((res) => {
         if (active) setResult({ key, data: res.data, error: null });
       })
       .catch((err) => {
-        if (active) setResult({ key, data: null, error: err.message });
+        if (!active || err?.name === "AbortError") return;
+        setResult({ key, data: null, error: err.message });
       });
 
     return () => {
       active = false;
+      controller.abort();
     };
   }, [key, endpoint]);
 

@@ -40,7 +40,8 @@ const rawRequest = async (endpoint, options = {}) => {
       },
       credentials: "include",
     });
-  } catch {
+  } catch (error) {
+    if (error?.name === "AbortError") throw error;
     throw new ApiError("Cannot reach the server. Is the API running?", 0);
   }
 
@@ -100,7 +101,7 @@ const request = async (endpoint, options = {}) => {
 };
 
 export const api = {
-  get: (endpoint) => request(endpoint, { method: "GET" }),
+  get: (endpoint, options = {}) => request(endpoint, { ...options, method: "GET" }),
   post: (endpoint, body) => request(endpoint, { method: "POST", body: JSON.stringify(body ?? {}) }),
   patch: (endpoint, body) =>
 request(endpoint, { method: "PATCH", body: JSON.stringify(body ?? {}) }),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState ,useEffect} from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -11,7 +11,7 @@ import Spinner from "@/src/components/ui/Spinner";
 import QuestionList from "@/src/components/questions/QuestionList";
 
 import useAuth from "@/src/hooks/useAuth";
-import useFetch from "@/src/hooks/useFetch";
+import usePaginatedFetch from "@/src/hooks/usePaginatedFetch";
 import { api} from "@/src/utils/api";
 import { DIFFICULTY_LEVELS, QUESTION_TYPES, QUESTION_TOPICS } from "@/src/utils/constants";
 
@@ -33,7 +33,6 @@ const QuestionsPage = () => {
   const [topic, setTopic] = useState("");
   const [actionError, setActionError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [questions, setQuestions] = useState([]);
   const limit = 12;
 
   const endpoint = useMemo(() => {
@@ -49,29 +48,14 @@ const QuestionsPage = () => {
   return `/questions?${params.toString()}`;
 }, [ difficulty, type, topic, currentPage]);
 
-  const { data, isLoading, error, refetch } = useFetch(endpoint);
-  console.log("abcd")
-
-  useEffect(() => {
-  if (!data?.questions) return;
-  console.log("abcd useEffect")
-
-  if (currentPage === 1) {
-    setQuestions(data.questions);
-  } else {
-    setQuestions((prevQuestions) => {
-      const existingIds = new Set(
-        prevQuestions.map((question) => question._id)
-      );
-
-      const newQuestions = data.questions.filter(
-        (question) => !existingIds.has(question._id)
-      );
-
-      return [...prevQuestions, ...newQuestions];
-    });
-  }
-}, [data, currentPage]);
+  const {
+    items: questions,
+    data,
+    isLoading,
+    error,
+    refetch,
+    removeItem,
+  } = usePaginatedFetch(endpoint, { page: currentPage, itemsKey: "questions" });
 
   const canManage = user?.role === "admin" || user?.role === "teacher";
 
@@ -85,6 +69,7 @@ const QuestionsPage = () => {
     setActionError("");
     try {
       await api.delete(`/questions/${id}`);
+      removeItem(id);
       refetch();
     } catch (err) {
       setActionError(err.message);
@@ -94,7 +79,6 @@ const QuestionsPage = () => {
   const resetAndChangeFilter = (setter, value) => {
   setter(value);
   setCurrentPage(1);
-  setQuestions([]);
   };
 
   return (
