@@ -40,8 +40,7 @@ const rawRequest = async (endpoint, options = {}) => {
       },
       credentials: "include",
     });
-  } catch (error) {
-    if (error?.name === "AbortError") throw error;
+  } catch {
     throw new ApiError("Cannot reach the server. Is the API running?", 0);
   }
 
@@ -100,8 +99,22 @@ const request = async (endpoint, options = {}) => {
   }
 };
 
+const inFlightGets = new Map();
+
+const dedupedGet = (endpoint) => {
+  const pending = inFlightGets.get(endpoint);
+  if (pending) return pending;
+
+  const promise = request(endpoint, { method: "GET" }).finally(() => {
+    inFlightGets.delete(endpoint);
+  });
+
+  inFlightGets.set(endpoint, promise);
+  return promise;
+};
+
 export const api = {
-  get: (endpoint, options = {}) => request(endpoint, { ...options, method: "GET" }),
+  get: dedupedGet,
   post: (endpoint, body) => request(endpoint, { method: "POST", body: JSON.stringify(body ?? {}) }),
   patch: (endpoint, body) =>
 request(endpoint, { method: "PATCH", body: JSON.stringify(body ?? {}) }),

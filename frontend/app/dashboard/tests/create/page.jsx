@@ -6,7 +6,7 @@ import Card from "@/src/components/ui/Card";
 import Input from "@/src/components/ui/Input";
 import Button from "@/src/components/ui/Button";
 import Spinner from "@/src/components/ui/Spinner";
-import usePaginatedFetch from "@/src/hooks/usePaginatedFetch";
+import useFetch from "@/src/hooks/useFetch";
 import DateTimePicker from "@/src/components/tests/DateTimePicker";
 import { api } from "@/src/utils/api";
 import { getClasses, getClassSubjects } from "@/src/utils/api";
@@ -54,7 +54,7 @@ const CreateTestPage = () => {
   return `/questions?${params.toString()}`;
 }, [topicFilter, questionPage]);
 
-  const { items: questions, data: questionsData, isLoading } = usePaginatedFetch(
+  const { items: questions, data: questionsData, isLoading } = useFetch(
     questionsEndpoint,
     { page: questionPage, itemsKey: "questions" }
   );

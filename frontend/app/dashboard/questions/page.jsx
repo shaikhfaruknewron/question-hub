@@ -11,7 +11,7 @@ import Spinner from "@/src/components/ui/Spinner";
 import QuestionList from "@/src/components/questions/QuestionList";
 
 import useAuth from "@/src/hooks/useAuth";
-import usePaginatedFetch from "@/src/hooks/usePaginatedFetch";
+import useFetch from "@/src/hooks/useFetch";
 import { api} from "@/src/utils/api";
 import { DIFFICULTY_LEVELS, QUESTION_TYPES, QUESTION_TOPICS } from "@/src/utils/constants";
 
@@ -55,7 +55,7 @@ const QuestionsPage = () => {
     error,
     refetch,
     removeItem,
-  } = usePaginatedFetch(endpoint, { page: currentPage, itemsKey: "questions" });
+  } = useFetch(endpoint, { page: currentPage, itemsKey: "questions" });
 
   const canManage = user?.role === "admin" || user?.role === "teacher";
 
