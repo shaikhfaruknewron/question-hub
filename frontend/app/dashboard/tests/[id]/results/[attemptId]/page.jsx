@@ -76,6 +76,101 @@ const AttemptEvaluationPage = () => {
       </div>
 
       {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+      <Card className="flex flex-col gap-4">
+  <div className="flex items-center justify-between">
+    <div>
+      <h3 className="text-base font-semibold text-gray-900">
+        Proctoring Summary
+      </h3>
+      <p className="text-sm text-gray-500">
+        Monitoring information recorded during this attempt
+      </p>
+    </div>
+
+    <Badge
+      label={attempt.proctoring?.status || "pending"}
+      tone={
+        attempt.proctoring?.status === "violated"
+          ? "draft"
+          : "published"
+      }
+    />
+  </div>
+
+  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="rounded-xl border border-gray-200 p-3">
+      <p className="text-xs text-gray-500">Tab switches</p>
+      <p className="mt-1 text-lg font-semibold text-gray-900">
+        {attempt.proctoring?.tabSwitchCount ?? 0}
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-gray-200 p-3">
+      <p className="text-xs text-gray-500">Fullscreen exits</p>
+      <p className="mt-1 text-lg font-semibold text-gray-900">
+        {attempt.proctoring?.fullscreenExitCount ?? 0}
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-gray-200 p-3">
+      <p className="text-xs text-gray-500">Copy attempts</p>
+      <p className="mt-1 text-lg font-semibold text-gray-900">
+        {attempt.proctoring?.copyAttemptCount ?? 0}
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-gray-200 p-3">
+      <p className="text-xs text-gray-500">Paste attempts</p>
+      <p className="mt-1 text-lg font-semibold text-gray-900">
+        {attempt.proctoring?.pasteAttemptCount ?? 0}
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-gray-200 p-3">
+      <p className="text-xs text-gray-500">Cut attempts</p>
+      <p className="mt-1 text-lg font-semibold text-gray-900">
+        {attempt.proctoring?.cutAttemptCount ?? 0}
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-gray-200 p-3">
+      <p className="text-xs text-gray-500">Right-click attempts</p>
+      <p className="mt-1 text-lg font-semibold text-gray-900">
+        {attempt.proctoring?.rightClickCount ?? 0}
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-gray-200 p-3">
+      <p className="text-xs text-gray-500">Camera violations</p>
+      <p className="mt-1 text-lg font-semibold text-gray-900">
+        {attempt.proctoring?.cameraViolationCount ?? 0}
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-gray-200 p-3">
+      <p className="text-xs text-gray-500">Microphone violations</p>
+      <p className="mt-1 text-lg font-semibold text-gray-900">
+        {attempt.proctoring?.microphoneViolationCount ?? 0}
+      </p>
+    </div>
+  </div>
+
+  <div className="flex flex-wrap gap-3 border-t border-gray-200 pt-4">
+    <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm">
+      <span className="text-gray-500">Total violations:</span>{" "}
+      <span className="font-semibold text-gray-900">
+        {attempt.proctoring?.totalViolations ?? 0}
+      </span>
+    </div>
+
+    <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm">
+      <span className="text-gray-500">Submission reason:</span>{" "}
+      <span className="font-semibold text-gray-900">
+        {attempt.submissionReason || "Not submitted yet"}
+      </span>
+    </div>
+  </div>
+</Card>
 
       {manualAnswers.length === 0 ? (
         <Card><p className="text-sm text-gray-500">This attempt has no descriptive or coding answers to evaluate.</p></Card>

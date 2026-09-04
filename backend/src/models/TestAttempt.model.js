@@ -15,6 +15,16 @@ const answerSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const proctoringEventSchema = new mongoose.Schema(
+{
+eventType: {type: String,required: true,},
+timestamp: { type: Date,default: Date.now,},
+metadata: { type: mongoose.Schema.Types.Mixed,default: {},},
+},
+{ _id: false }
+);
+
+
 const testAttemptSchema = new mongoose.Schema(
   {
     test: { type: mongoose.Schema.Types.ObjectId, ref: "Test", required: true },
@@ -31,6 +41,34 @@ const testAttemptSchema = new mongoose.Schema(
     passed: { type: Boolean, default: false },
     startedAt: { type: Date, default: Date.now },
     submittedAt: { type: Date, default: null },
+    submissionReason: {type: String,enum: ["student-submitted","time-expired","proctoring-violation","system-submitted",],
+     default: null,},
+
+   proctoring: {
+enabled: {type: Boolean,default: false,},
+
+status: {type: String,enum: ["pending", "active", "completed", "violated"],default: "pending",},
+
+tabSwitchCount: {type: Number,default: 0,},
+
+fullscreenExitCount: {type: Number,default: 0,},
+
+copyAttemptCount: {type: Number,default: 0,},
+
+pasteAttemptCount: {type: Number,default: 0,},
+
+cutAttemptCount: {type: Number,default: 0,},
+
+rightClickCount: {type: Number,default: 0,},
+
+cameraViolationCount: {type: Number,default: 0,},
+
+microphoneViolationCount: {type: Number,default: 0,},
+
+totalViolations: {type: Number,default: 0,},
+
+events: {type: [proctoringEventSchema],default: [],},},
+
   },
   { timestamps: true }
 );

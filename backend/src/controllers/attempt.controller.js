@@ -7,6 +7,13 @@ import User from "../models/User.model.js";
 import ClassSubjectTeacher from "../models/classSubjectTeacher.model.js";
 import { gradeAttempt, MANUAL_TYPES } from "../services/grading.service.js";
 import shuffleArray from "../utils/shuffle.js";
+import {
+PROCTORING_EVENT_TYPES,
+PROCTORING_EVENT_COUNTERS,
+PROCTORING_ACTIONS,
+PROCTORING_POLICY,
+} from "../constants/proctoring.constants.js";
+
 
 const assertStudentCanAccessTest = async (test, user) => {
   if (user.role !== "student") {
@@ -129,6 +136,10 @@ export const startAttempt = asyncHandler(async (req, res) => {
       student: req.user._id,
       attemptNumber: previousAttempts + 1,
       answers: [],
+      proctoring: {
+      enabled: true,
+      status: "active",
+      },
     });
   }
 
@@ -193,7 +204,101 @@ export const submitAnswer = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, {}, "Answer saved"));
 });
 
+export const logProctoringEvent = asyncHandler(async (req, res) => {
+const { eventType, metadata = {} } = req.body;
+
+if (!Object.values(PROCTORING_EVENT_TYPES).includes(eventType)) {
+throw new ApiError(400, "Invalid proctoring event type");
+}
+
+const attempt = await TestAttempt.findById(req.params.attemptId);
+
+if (
+!attempt ||
+attempt.student.toString() !== req.user._id.toString()
+) {
+throw new ApiError(404, "Attempt not found");
+}
+
+const test = await Test.findById(attempt.test);
+
+await assertStudentCanAccessTest(test, req.user);
+
+await expireAttemptIfNeeded(attempt, test);
+
+if (attempt.status !== "in-progress") {
+throw new ApiError(400, "This attempt is no longer active");
+}
+
+if (!attempt.proctoring?.enabled) {
+throw new ApiError(400, "Proctoring is not enabled for this attempt");
+}
+
+const counterField = PROCTORING_EVENT_COUNTERS[eventType];
+
+if (counterField) {
+attempt.proctoring[counterField] += 1;
+}
+
+attempt.proctoring.totalViolations += 1;
+
+attempt.proctoring.events.push({
+eventType,
+timestamp: new Date(),
+metadata,
+});
+
+let action = PROCTORING_ACTIONS.WARNING;
+
+if (
+attempt.proctoring.tabSwitchCount >=
+PROCTORING_POLICY.MAX_TAB_SWITCHES ||
+attempt.proctoring.fullscreenExitCount >=
+PROCTORING_POLICY.MAX_FULLSCREEN_EXITS ||
+attempt.proctoring.totalViolations >=
+PROCTORING_POLICY.MAX_TOTAL_VIOLATIONS
+) {
+action = PROCTORING_ACTIONS.AUTO_SUBMIT;
+attempt.proctoring.status = "violated";
+}
+
+await attempt.save();
+
+res.status(200).json(
+new ApiResponse(
+200,
+{
+action,
+    proctoring: {
+      tabSwitchCount: attempt.proctoring.tabSwitchCount,
+      fullscreenExitCount:
+        attempt.proctoring.fullscreenExitCount,
+      copyAttemptCount:
+        attempt.proctoring.copyAttemptCount,
+      pasteAttemptCount:
+        attempt.proctoring.pasteAttemptCount,
+      cutAttemptCount:
+        attempt.proctoring.cutAttemptCount,
+      rightClickCount:
+        attempt.proctoring.rightClickCount,
+      cameraViolationCount:
+        attempt.proctoring.cameraViolationCount,
+      microphoneViolationCount:
+        attempt.proctoring.microphoneViolationCount,
+      totalViolations:
+        attempt.proctoring.totalViolations,
+    },
+  },
+  "Proctoring event recorded"
+)
+
+
+);
+});
+
+
 export const submitAttempt = asyncHandler(async (req, res) => {
+  const { submissionReason = "student-submitted" } = req.body;
   const attempt = await TestAttempt.findById(req.params.attemptId);
   if (!attempt || attempt.student.toString() !== req.user._id.toString()) {
     throw new ApiError(404, "Attempt not found");
@@ -204,7 +309,15 @@ export const submitAttempt = asyncHandler(async (req, res) => {
   await expireAttemptIfNeeded(attempt, test);
   if (attempt.status !== "in-progress") throw new ApiError(400, "This attempt has already been submitted");
 
-  attempt.submittedAt = new Date();
+ attempt.submittedAt = new Date();
+attempt.submissionReason = submissionReason;
+
+if (attempt.proctoring?.enabled) {
+  attempt.proctoring.status =
+    submissionReason === "proctoring-violation"
+      ? "violated"
+      : "completed";
+}
   await gradeAttempt(attempt, test);
   await attempt.save();
 
